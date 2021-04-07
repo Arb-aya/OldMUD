@@ -10,30 +10,30 @@
 
 <h1 class="text-center">{% trans "Sign In" %}</h1>
 
-{% comment %}{% get_providers as socialaccount_providers %}{% endcomment %}
+{% get_providers as socialaccount_providers %}
 
-{% comment %}{% if socialaccount_providers %}{% endcomment %}
-{% comment %}<p>{% blocktrans with site.name as site_name %}Please sign in with one{% endcomment %}
-{% comment %}of your existing third party accounts. Or, <a href="{{ signup_url }}">sign up</a>{% endcomment %}
-{% comment %}for a {{ site_name }} account and sign in below:{% endblocktrans %}</p>{% endcomment %}
+{% if socialaccount_providers %}
+<p>{% blocktrans with site.name as site_name %}Please sign in with one
+of your existing third party accounts. Or, <a href="{{ signup_url }}">sign up</a>
+for a {{ site_name }} account and sign in below:{% endblocktrans %}</p>
 
-{% comment %}<div class="socialaccount_ballot">{% endcomment %}
+<div class="socialaccount_ballot">
 
-  {% comment %}<ul class="socialaccount_providers">{% endcomment %}
-    {% comment %}{% include "socialaccount/snippets/provider_list.html" with process="login" %}{% endcomment %}
-  {% comment %}</ul>{% endcomment %}
+  <ul class="socialaccount_providers">
+    {% include "socialaccount/snippets/provider_list.html" with process="login" %}
+  </ul>
 
-  {% comment %}<div class="login-or">{% trans 'or' %}</div>{% endcomment %}
+  <div class="login-or">{% trans 'or' %}</div>
 
-{% comment %}</div>{% endcomment %}
+</div>
 
-{% comment %}{% include "socialaccount/snippets/login_extra.html" %}{% endcomment %}
+{% include "socialaccount/snippets/login_extra.html" %}
 
-{% comment %}{% else %}{% endcomment %}
+{% else %}
 
 <p>{% blocktrans %}If you have not created an account yet, then please
 <a href="{{ signup_url }}">sign up</a> first.{% endblocktrans %}</p>
-{% comment %}{% endif %}{% endcomment %}
+{% endif %}
 <form class="login" method="POST" action="{% url 'account_login' %}">
   {% csrf_token %}
   {{ form.as_p }}
