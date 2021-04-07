@@ -1,0 +1,49 @@
+
+<nav class="navbar navbar-expand-md navbar-light bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">
+      <img src="https://via.placeholder.com/75" alt="Site Logo" />
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarcontent"
+      aria-controls="navbarcontent"
+      aria-expanded="false"
+      aria-label="Toggle Navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarcontent">
+      <ul
+        class="navbar-nav mx-auto ml-md-auto align-content justify-content-end w-100 me-5"
+      >
+	  <li clas="nav-item">
+		  <a class="nav-link" href="{% url 'product_index' %}">Products</a>
+	  </li>
+        {% if user.is_authenticated %}
+          <li clas="nav-item">
+		  <a class="nav-link" href="{% url 'account_email' %}">Change E-mail</a>
+	  </li>
+          <li clas="nav-item">
+		  <a class="nav-link" href="{% url 'account_logout' %}">Sign Out</a>
+	  </li>
+	{% else %}
+        <li class="nav-item" id="loginLink">
+          <a class="nav-link text-muted" href="{% url 'account_login' %}">Login</a>
+        </li>
+
+        <li class="nav-item" id="registerLink">
+          <strong>
+		  <a class="nav-link" href="{{ signup_url }}">Register</a>
+	  </strong>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+  <!-- ./container-fluid -->
+</nav>
