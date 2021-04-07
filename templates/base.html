@@ -1,0 +1,77 @@
+{% load static %}
+{% load account %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% block core_meta %}
+    <!-- Required meta tags -->
+    <meta http-equiv="" content="" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% endblock %} {% block extra_meta %} {% endblock %} {% block core_css %}
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl"
+      crossorigin="anonymous"
+    />
+
+    <!-- Google fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Animate.css -->
+    <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+  />
+
+    <link rel="stylesheet" href="{% static 'css/base.css' %}" />
+
+    {% endblock %} {% block extra_css %} {% endblock %} {% block core_js %}
+    <!-- Bootstrap -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0"
+      crossorigin="anonymous"
+    ></script>
+    <!-- Font awesome -->
+    <script
+      src="https://kit.fontawesome.com/6faf9e6e8d.js"
+      crossorigin="anonymous"
+    ></script>
+    {% endblock %} {% block extra_js %} {% endblock %}
+
+    <title>Gym {% block extra_title %} {% endblock %}</title>
+  </head>
+  <body>
+    {% include 'includes/mainnav.html' %}
+	    {% if messages %}
+	    <div class="toast-container container-fluid">
+	    {% for message in messages %}
+                {% with message.level as level %}
+                    {% if level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+                        {% include 'includes/toasts/toast_error.html' %}
+                    {% elif level == DEFAULT_MESSAGE_LEVELS.WARNING%}
+                        {% include 'includes/toasts/toast_warning.html' %}
+			{% elif level ==  DEFAULT_MESSAGE_LEVELS.SUCCESS %}
+                        {% include 'includes/toasts/toast_success.html' %}
+                    {% else %}
+                        {% include 'includes/toasts/toast_info.html' %}
+                    {% endif %}
+                {% endwith %}
+		{% include 'includes/toasts/toast.html' %}
+	    {% endfor %}
+	    </div>
+	    {% endif %}
+    <main>
+	    {% block content %} {% endblock %}
+    </main>
+
+    {% block post_load_js %}
+    {% endblock %}
+  </body>
+</html>

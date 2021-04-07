@@ -7,7 +7,7 @@
   <section class="row">
     <div class="col-12 section-wrapper bg-black">
       <div class="section-slope-right bg-yellow">
-        <div class="section-content" id="s1">
+        <div class="section-content animate__animated" id="s1">
           <h2>Section 1</h2>
           <p>
             Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
@@ -22,7 +22,7 @@
 
     <div class="col-12 section-wrapper bg-yellow">
       <div class="section-slope-left bg-black yellow">
-        <div class="section-content" id="s2">
+        <div class="section-content animate__animated" id="s2">
           <h2>Section 2</h2>
           <p>
             Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
@@ -37,7 +37,7 @@
 
     <div class="col-12 section-wrapper bg-black">
       <div class="section-slope-right bg-yellow">
-        <div class="section-content" id="s3">
+        <div class="section-content animate__animated" id="s3">
           <h2>Section 3</h2>
           <p>
             Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
@@ -52,7 +52,7 @@
   </section>
 </div>
 {% endblock %} {% block post_load_js %}
-<script src="{% static 'js/scrolling.js'%}" charset="utf-8"></script>
+<script src="{% static 'js/scrolling.js' %}" charset="utf-8"></script>
 	<script type="text/javascript">
 		var toastElList = [].slice.call(document.querySelectorAll('.toast'))
 		var toastList = toastElList.map(function(toastEl){
