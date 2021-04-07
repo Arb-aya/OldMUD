@@ -9,6 +9,10 @@ body {
 	z-index: 99999999;
 }
 
+.toast-divider{
+	height: 2px;
+}
+
 .section-wrapper {
   height: 100vh;
   min-height: 100vh;
