@@ -47,12 +47,13 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.twitch",
     "home",
     "products",
+    "MUD",
 ]
 
 SITE_ID = 2
 
 LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/character"
 SOCIALACCOUNT_PROVIDERS = {
         'twitch':{
             'SCOPE':['user_read']
