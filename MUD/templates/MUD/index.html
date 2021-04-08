@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load socialaccount %}
+
+{% block content %}
+
+	{% if character %}	
+		{{ character.hp }}
+	{% else %}
+		<p> create a character </p>
+	{% endif %}
+{% endblock %}
