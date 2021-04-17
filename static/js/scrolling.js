@@ -1,4 +1,9 @@
-
+/**
+ * Generates incremental steps used in the opacity
+ * IntersectionObserver
+ *
+ * @return {Array} [Array of Numbers]
+ */
 const generateThresholds = () => {
 	let init_array = [];
 	for (let i = 0; i < 100; i++) {
@@ -11,6 +16,9 @@ const generateThresholds = () => {
 
 thresholds = generateThresholds();
 
+/**
+* Options for the Intersection Observers
+*/
 const options_opacity = {
 	root: null, // browser viewport
 	threshold: thresholds,
@@ -22,6 +30,14 @@ const options_animation = {
 
 }
 
+/**
+ * Callback functions for the intersection observers
+ */
+
+
+/**
+ * Sets the opacity of entry to the intersection ratio.
+ */
 const callback_opacity = (entries) => {
 	entries.forEach(entry => {
 		if (entry.target.classList.contains('seen-left') || entry.target.classList.contains('seen-right')){
@@ -30,6 +46,9 @@ const callback_opacity = (entries) => {
 	});
 };
 
+/**
+ * Triggers CSS animations on content sections on the home page.
+ */
 const callback_animation = (entries) => {
 	entries.forEach(entry => {
 		if (entry.intersectionRatio > 0) {
