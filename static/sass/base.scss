@@ -1,0 +1,25 @@
+$orange-bg        : #d55e00;
+$orange-font-pair : #000000;
+
+$blue-bg          : #0072b2;
+$blue-font-pair   : #FFFFFF;
+
+$yellow           : #e69f00;
+
+body{
+	background-color: $orange-bg;
+}
+
+.toast-container{
+	position: fixed;
+	top: 72px;
+	right: 15px;
+	z-index: 99999999;
+}
+
+.toast-divider{
+	height: 2px;
+}
+
+
+

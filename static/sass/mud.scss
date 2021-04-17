@@ -1,0 +1,128 @@
+@use 'base';
+@use 'prefixes';
+
+body {
+  background-color: base.$blue-bg;
+  color: base.$blue-font-pair;
+}
+
+.icon {
+  color: base.$yellow;
+  margin-left: 0.2rem;
+}
+
+.page-title {
+  text-align: center;
+  text-transform: uppercase;
+  margin-top: 2rem;
+}
+
+.edit-link {
+  margin-top: 0.2rem;
+  padding: 0.2rem;
+  color: base.$blue-font-pair;
+  text-decoration: none;
+
+  &:hover {
+    color: inherit;
+  }
+}
+
+.header-text {
+  width: 100%;
+  text-align: center;
+  color: base.$blue-font-pair;
+  text-transform: uppercase;
+  font-weight: bold;
+
+  &::before,
+  &::after {
+    content: "-";
+    font-weight: bolder;
+    color: base.$yellow;
+  }
+}
+
+.form-container {
+  border-radius: 1rem;
+  background-color: base.$blue-bg;
+  margin-top: 2rem;
+
+  .form-control {
+    box-shadow: none;
+  }
+}
+
+.trait-container,
+.button-container {
+  border: 0.3rem solid base.$yellow;
+  border-radius: 1rem;
+  @include prefixes.box-shadow(0px 10px 20px -3px rgba(0, 0, 0, 0.66));
+  background-color: rgba(0, 0, 0, 0.4);
+  text-align: center;
+  padding-bottom: 1rem;
+  margin-top: 3rem;
+
+  legend {
+    width: 50%;
+    border: 0.3rem solid base.$yellow;
+    border-radius: 1rem;
+    position: relative;
+    top: -25px;
+    right: -25%;
+    box-sizing: border-box;
+    background-color: base.$blue-bg;
+    color: base.$blue-font-pair;
+    text-transform: uppercase;
+  }
+}
+
+.button-container {
+	background-color: base.$blue-bg;
+	position: fixed;
+	top: 0;
+	padding: 2rem;
+}
+
+
+.trait {
+  margin-bottom: 2rem;
+
+  .input-group {
+    justify-content: center;
+  }
+
+  .btn {
+    color: base.$yellow;
+
+    &:disabled {
+      visibility: hidden;
+    }
+  }
+}
+
+.trait-title {
+  margin-bottom: 0;
+  text-transform: uppercase;
+}
+
+input[type="text"] {
+  border: 2px solid #ffffff;
+  border-radius: 1rem;
+  outline: 0 none;
+  text-align: center;
+  background-color: base.$blue-font-pair;
+  color: base.$blue-bg;
+  font-weight: bold;
+  transition: all 0.5s ease;
+
+  &:focus {
+    border: 2px solid base.$yellow;
+    background-color: base.$blue-bg;
+    color: base.$blue-font-pair;
+  }
+}
+
+#inventory{
+	border: 1px solid #ddd;
+}

@@ -1,0 +1,135 @@
+body {
+  background-color: #d55e00;
+}
+
+.toast-container {
+  position: fixed;
+  top: 72px;
+  right: 15px;
+  z-index: 99999999;
+}
+
+.toast-divider {
+  height: 2px;
+}
+
+body {
+  background-color: #0072b2;
+  color: #FFFFFF;
+}
+
+.icon {
+  color: #e69f00;
+  margin-left: 0.2rem;
+}
+
+.page-title {
+  text-align: center;
+  text-transform: uppercase;
+  margin-top: 2rem;
+}
+
+.edit-link {
+  margin-top: 0.2rem;
+  padding: 0.2rem;
+  color: #FFFFFF;
+  text-decoration: none;
+}
+.edit-link:hover {
+  color: inherit;
+}
+
+.header-text {
+  width: 100%;
+  text-align: center;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+.header-text::before, .header-text::after {
+  content: "-";
+  font-weight: bolder;
+  color: #e69f00;
+}
+
+.form-container {
+  border-radius: 1rem;
+  background-color: #0072b2;
+  margin-top: 2rem;
+}
+.form-container .form-control {
+  box-shadow: none;
+}
+
+.trait-container,
+.button-container {
+  border: 0.3rem solid #e69f00;
+  border-radius: 1rem;
+  -webkit-box-shadow: 0px 10px 20px -3px rgba(0, 0, 0, 0.66);
+  -moz-box-shadow: 0px 10px 20px -3px rgba(0, 0, 0, 0.66);
+  box-shadow: 0px 10px 20px -3px rgba(0, 0, 0, 0.66);
+  background-color: rgba(0, 0, 0, 0.4);
+  text-align: center;
+  padding-bottom: 1rem;
+  margin-top: 3rem;
+}
+.trait-container legend,
+.button-container legend {
+  width: 50%;
+  border: 0.3rem solid #e69f00;
+  border-radius: 1rem;
+  position: relative;
+  top: -25px;
+  right: -25%;
+  box-sizing: border-box;
+  background-color: #0072b2;
+  color: #FFFFFF;
+  text-transform: uppercase;
+}
+
+.button-container {
+  background-color: #0072b2;
+  position: fixed;
+  top: 0;
+  padding: 2rem;
+}
+
+.trait {
+  margin-bottom: 2rem;
+}
+.trait .input-group {
+  justify-content: center;
+}
+.trait .btn {
+  color: #e69f00;
+}
+.trait .btn:disabled {
+  visibility: hidden;
+}
+
+.trait-title {
+  margin-bottom: 0;
+  text-transform: uppercase;
+}
+
+input[type=text] {
+  border: 2px solid #ffffff;
+  border-radius: 1rem;
+  outline: 0 none;
+  text-align: center;
+  background-color: #FFFFFF;
+  color: #0072b2;
+  font-weight: bold;
+  transition: all 0.5s ease;
+}
+input[type=text]:focus {
+  border: 2px solid #e69f00;
+  background-color: #0072b2;
+  color: #FFFFFF;
+}
+
+#inventory {
+  border: 1px solid #ddd;
+}
+
+/*# sourceMappingURL=mud.css.map */

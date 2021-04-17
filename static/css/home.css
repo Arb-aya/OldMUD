@@ -1,0 +1,72 @@
+body {
+  background-color: #d55e00;
+}
+
+.toast-container {
+  position: fixed;
+  top: 72px;
+  right: 15px;
+  z-index: 99999999;
+}
+
+.toast-divider {
+  height: 2px;
+}
+
+.section-wrapper {
+  height: 100vh;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.section-slope-left,
+.section-slope-right {
+  height: 100%;
+  padding-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.section-content {
+  position: relative;
+  margin: 0 auto;
+  padding: 20px;
+  height: 75%;
+  max-width: 75%;
+  opacity: 0;
+  will-change: opacity;
+}
+
+.seen-left {
+  animation-name: slideInLeft;
+  animation-duration: 2s;
+}
+
+.seen-right {
+  animation-name: slideInRight;
+  animation-duration: 2s;
+}
+
+.section-slope-right {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 76%);
+}
+
+.section-slope-left {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 76%, 0% 100%);
+}
+
+.bg-orange {
+  background-color: #d55e00;
+  color: #000000;
+}
+
+.bg-black {
+  background-color: #000000;
+  color: #d55e00;
+}
+
+/*# sourceMappingURL=home.css.map */
