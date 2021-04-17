@@ -2,11 +2,66 @@
 {% load static %}
 {% load socialaccount %}
 
-{% block content %}
+{% block extra_js %}
+	<script src="{% static 'js/konva.min.js'%}"></script>
+{% endblock %}
 
-	{% if character %}	
-		{{ character.hp }}
-	{% else %}
-		<p> create a character </p>
-	{% endif %}
+
+{% block content %}
+<div class="row">
+
+  <div class="col-12 text-center">
+    <h2 class="page-title">{{ user.username }}'s Character</h2>
+    {% if can_edit == True %}
+    <p>
+      <a class="edit-link" href="{% url 'edit_character'%}">
+	      Edit Character
+	      <i class="fas fa-edit icon"></i>
+      </a>
+    </p>
+    {% endif %}
+	{{ items|json_script:"itemdata" }}
+	{{ inventory_size|json_script:"inventory_size"}}
+	{{ MEDIA_URL|json_script:"media_url" }}
+  </div>
+
+  <div class="col-12 text-center">
+	  <button type="button" class="btn" data-bs-toggle="modal" data-bs-target="#inventoryModal">
+		<p>View Inventory</p>
+	</button>
+
+  </div>
+
+  <div class="col-12 form-container">
+		  {% include 'includes/DisplayCharacterForm.html' %}
+  </div>
+
+
+<div class="modal fade" id="inventoryModal" tabindex="-1" aria-labelledby="inventoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg modal-fullscreen-md-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="inventoryModalLabel">Modal title</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div id="modalBody" class="modal-body d-flex justify-content-center">
+	      <div id="inventory">
+	      </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
+
+{{ items|json_script:'itemdata' }}
+{% block post_load_js%}
+	<script id="media_url" charset="utf-8"></script>
+	<script id="itemdata" charset="utf-8"></script>
+	<script id="inventory_size" charset="utf-8"></script>
+	<script src="{% static 'js/inventory.js' %}" type="module" charset="utf-8"></script>
 {% endblock %}
