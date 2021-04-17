@@ -45,10 +45,13 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.twitch",
+    "crispy_forms",
     "home",
     "products",
     "MUD",
 ]
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 SITE_ID = 2
 
@@ -87,7 +90,12 @@ TEMPLATES = [
                 "django.template.context_processors.media",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-            ]
+            ],
+            'builtins':[
+                'crispy_forms.templatetags.crispy_forms_tags',
+                'crispy_forms.templatetags.crispy_forms_field',
+                ]
+
         },
     }
 ]
@@ -157,3 +165,17 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 FILE_UPLOAD_PERMISSIONS = 0o644
+
+INITIAL_CHARACTER_POINTS = 10
+
+DEFAULT_INVENTORY_SIZE = 6
+
+DEFAULT_TRAIT_VALUE = 1
+MIN_TRAIT_VALUE = 1
+MAX_TRAIT_VALUE = 100
+
+DEFAULT_HP_VALUE = 10
+MIN_HP_VALUE = 10
+
+MIN_POINTS_VALUE = 0
+DEFAULT_POINTS_VALUE = 5
