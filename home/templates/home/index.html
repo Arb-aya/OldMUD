@@ -1,65 +1,49 @@
-{% extends 'base.html'%}
-{% load static %}
-
-
-{% block content%}
-<div class="container-fluid">
-  <section class="row">
-    <div class="col-12 section-wrapper bg-black">
-      <div class="section-slope-right bg-yellow">
-        <div class="section-content animate__animated" id="s1">
-          <h2>Section 1</h2>
-          <p>
-            Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
-            nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
-            erat, sed diam voluptua. At vero eos et accusam et justo duo dolores
-            et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est
-            Lorem ipsum dolor sit amet.
-          </p>
-        </div>
+{% extends 'base.html'%} {% load static %} {% block content%}
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/home.css' %}" type="text/css" media="all">
+{% endblock %}
+<section class="row">
+  <div class="col-12 section-wrapper bg-black">
+    <div class="section-slope-right bg-orange">
+      <div class="section-content animate__animated" id="s1">
+        <h2>Section 1</h2>
+        <p>
+          Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
+          nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
+          sed diam voluptua. At vero eos et accusam et justo duo dolores et ea
+          rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem
+          ipsum dolor sit amet.
+        </p>
       </div>
     </div>
+  </div>
 
-    <div class="col-12 section-wrapper bg-yellow">
-      <div class="section-slope-left bg-black yellow">
-        <div class="section-content animate__animated" id="s2">
-          <h2>Section 2</h2>
-          <p>
-            Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
-            nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
-            erat, sed diam voluptua. At vero eos et accusam et justo duo dolores
-            et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est
-            Lorem ipsum dolor sit amet.
-          </p>
-        </div>
+  <div class="col-12 section-wrapper bg-orange">
+    <div class="section-slope-left bg-black">
+      <div class="section-content animate__animated" id="s2">
+        <h2>Section 2</h2>
+        <p>
+          Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
+          nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
+          sed diam voluptua. At vero eos et accusam et justo duo dolores et ea
+          rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem
+          ipsum dolor sit amet.
+        </p>
       </div>
     </div>
-
-    <div class="col-12 section-wrapper bg-black">
-      <div class="section-slope-right bg-yellow">
-        <div class="section-content animate__animated" id="s3">
-          <h2>Section 3</h2>
-          <p>
-            Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
-            nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam
-            erat, sed diam voluptua. At vero eos et accusam et justo duo dolores
-            et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est
-            Lorem ipsum dolor sit amet.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-</div>
-{% endblock %} {% block post_load_js %}
+  </div>
+</section>
+{% endblock %}
+{% block post_load_js %}
+{{ block.super }}
 <script src="{% static 'js/scrolling.js' %}" charset="utf-8"></script>
-	<script type="text/javascript">
-		var toastElList = [].slice.call(document.querySelectorAll('.toast'))
-		var toastList = toastElList.map(function(toastEl){
-			return new bootstrap.Toast(toastEl);
-		});
+<script type="text/javascript">
+  var toastElList = [].slice.call(document.querySelectorAll(".toast"));
+  var toastList = toastElList.map(function (toastEl) {
+    return new bootstrap.Toast(toastEl);
+  });
 
-		toastList.forEach(toast => toast.show());
-		console.log(toastElList);
-	</script>
+  toastList.forEach((toast) => toast.show());
+</script>
 {% endblock %}
