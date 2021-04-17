@@ -1,23 +1,58 @@
 /**
  * This file is responsible for displaying the inventory to the user
+ * as well as managing user interactions with the inventory
  */
-
 
 /**
  * Load in dynamic content from django using json_script filter
+ *
  */
-const items                    = JSON.parse(document.getElementById('itemdata').textContent);
-const character_inventory_size = Number(JSON.parse(document.getElementById('inventory_size').textContent));
-const media_url                = JSON.parse(document.getElementById('media_url').textContent);
+let item_data, character_inventory_size, media_url;
+
+document.addEventListener('DOMContentLoaded', (e) => {
+	//Items data from django backend
+	item_data = JSON.parse(document.getElementById('itemdata').textContent);
+	//How much inventory space the chracter has
+	character_inventory_size = Number(JSON.parse(document.getElementById('inventory_size').textContent));
+	//The media url prefix. Used to access item images.
+	media_url = JSON.parse(document.getElementById('media_url').textContent);
+
+	display_inventory();
+});
+
+// If the window resizes we need to check if we want to change to a horizontal / vertical grid
+window.addEventListener('resize', (e) => {
+	//todo check parent div width and height and create vertical menu if needed
+	create_stage_wrapper();
+});
+
+
+
+function block_inventory_space(col, row, width, height, Layer) {
+	const blocked_space = new Konva.Rect({
+		x: col * GRID_CELL_SIZE,
+		y: row * GRID_CELL_SIZE,
+		width: width * GRID_CELL_SIZE,
+		height: height * GRID_CELL_SIZE,
+		fill: 'red',
+		opacity: 0.5
+	});
+
+	return blocked_space;
+}
 
 /**
- * Creates a konva canvas with a grid. User items are displayed
+ * Creates a Konva canvas with a grid. User items are displayed
  * in the grid, the user can drag and drop the items into
  * different slots
  *
- * @param {String} [type] - [horizontal / vertical menu]
+ * @param {String} type - horizontal / vertical menu
  */
-function create_stage(type = 'horizontal') {
+function create_stage_wrapper(type = 'horizontal') {
+
+	let stage_wrapper = {};
+	const GRID_CELL_SIZE = 100;
+
 
 	// Work out how many slots to display
 	let display_size = character_inventory_size;
@@ -25,6 +60,7 @@ function create_stage(type = 'horizontal') {
 	if (character_inventory_size % 2 !== 0) {
 		display_size = character_inventory_size + 1;
 	}
+
 
 	// Do we display them vertically or horizontally
 	let cols = display_size / 2;
@@ -35,51 +71,11 @@ function create_stage(type = 'horizontal') {
 		rows = display_size / 2;
 	}
 
-	const grid_cell_size = 100;
-	const width = cols * grid_cell_size;
-	const height = rows * grid_cell_size;
 
-	/**
-	 * Creates a new image object per item passed in from the backend.
-	 *
-	 * @param {Number} col     - 	[Which column do we place the item in?]
-	 * @param {Number} row     - 	[Which row do we place the item in?]
-	 * @param {Number} width   - 	[How many "cells" does the item occupy on the X axis]
-	 * @param {Number} height  - 	[How many "cells" does the item occupy on the Y axis]
-	 * @param {String} url     -	[URL to the image for the item]
-	 * @param {String} layer   - 	[Layer to display item on]
-	 * @param {String} stage   - 	[Stage we are using]
-	 */
-	function newItem(col, row, width, height, url, layer, stage) {
-		Konva.Image.fromURL(url, function(image) {
-			image.setAttrs({
-				x: col * grid_cell_size,
-				y: row * grid_cell_size,
-				width: width * grid_cell_size,
-				height: height * grid_cell_size,
-				draggable: true
-			});
-			/**
-			 * Code for drag and drop grid taken from:
-			 * https://codepen.io/pierrebleroux/pen/gGpvxJ
-			 */
-			image.on('dragstart', (e) => {
-				image.moveToTop();
-			});
-			image.on('dragend', (e) => {
-				image.position({
-					x: Math.round(image.x() / grid_cell_size) * grid_cell_size,
-					y: Math.round(image.y() / grid_cell_size) * grid_cell_size
-				});
-				stage.batchDraw();
-			});
-			image.on('dragmove', (e) => {
-				stage.batchDraw();
-			});
-			layer.add(image);
-			layer.batchDraw();
-		});
-	}
+	const width = cols * GRID_CELL_SIZE;
+	const height = rows * GRID_CELL_SIZE;
+
+
 
 	var stage = new Konva.Stage({
 		container: 'inventory',
@@ -87,50 +83,166 @@ function create_stage(type = 'horizontal') {
 		height: height
 	});
 
-	var gridLayer = new Konva.Layer();
-	var padding = grid_cell_size;
+	stage_wrapper.cols = cols;
+	stage_wrapper.rows = rows;
+	stage_wrapper.grid_cell_size = GRID_CELL_SIZE;
+	stage_wrapper.stage = stage;
 
-	for (var i = 0; i < width / padding; i++) {
-		gridLayer.add(new Konva.Line({
-			points: [Math.round(i * padding) + 0.5, 0, Math.round(i * padding) + 0.5, height],
-			stroke: '#ddd',
-			strokeWidth: 1,
-		}));
-	}
-
-	gridLayer.add(new Konva.Line({ points: [0, 0, 10, 10] }));
-	for (var j = 0; j < height / padding; j++) {
-		gridLayer.add(new Konva.Line({
-			points: [0, Math.round(j * padding), width, Math.round(j * padding)],
-			stroke: '#ddd',
-			strokeWidth: 1,
-		}));
-	}
-
-	var layer = new Konva.Layer();
-
-	items.forEach((item) => {
-		newItem(0, 0, 1, 1, media_url + item.image, layer, stage)
-	});
-
-	stage.add(gridLayer);
-	stage.add(layer);
+	return stage_wrapper;
 }
 
-const modal = document.getElementById('inventoryModal');
-const modal_body = document.getElementById('modalBody');
+/**
+ * Draws a grid of rows and columns to make cells of grid_cell_size
+ *
+ * @param {Number} rows                                             - Number of rows to have
+ * @param {Number} cols                                             - Number of columns to have
+ * @param {Number} grid_cell_size                                   - Size of one grid square
+ * @param {Number} width                                            - Maximum width of the stage to draw on
+ * @param {Number} height                                           - Maximum height of the stage to draw on
+ */
+function create_grid_layer(rows, cols, grid_cell_size, width, height) {
+	var grid_layer = new Konva.Layer();
+
+	for (var i = 0; i <= cols; i++) {
+		grid_layer.add(new Konva.Line({
+			points: [Math.round(i * grid_cell_size), 0, Math.round(i * grid_cell_size), height],
+			stroke: '#ddd',
+			strokewidth: 1,
+		}));
+	}
+
+	grid_layer.add(new Konva.Line({ points: [0, 0, 10, 10] }));
+	for (var j = 0; j <= rows; j++) {
+		grid_layer.add(new Konva.Line({
+			points: [0, Math.round(j * grid_cell_size), width, Math.round(j * grid_cell_size)],
+			stroke: '#ddd',
+			strokewidth: 1,
+		}));
+	}
+
+	return grid_layer;
+}
+
 
 /**
- * When the modal is shown this checks if the height is greater than the width.
- * If so display the inventory to the user vertically. Otherwise horizontally.
+ * Creates a new image object per item passed in from the backend.
+ * Wraps a Konva image object to provide attributes meant to make
+ * collision detection easier.
+ *
+ * @param {String} name              - Name of the item
+ * @param {Number} col               - Which column do we place the item in?
+ * @param {Number} row               - Which row do we place the item in?
+ * @param {Number} width             - How many "cells" does the item occupy on the X axis
+ * @param {Number} height            - How many "cells" does the item occupy on the Y axis
+ * @param {String} url               - URL to the image for the item
+ * @param {Number} grid_cell_size    - The size of one grid cell in pixels
+ * @param {Konva Layer Object} layer - Layer the image should be added to
+ * @param {Konva Stage Objet} stage  - Stage @layer belonds to
+ */
+function newItem(name, col, row, width, height, url, grid_cell_size, layer, stage) {
+
+	// Object returned from this method
+	let item = {};
+
+	// Space IDs are IDs that describe one cell in the grid. For example, 00 is the first cell (top left).
+	// We keep track of the last space occupied by an item as well as the current one.
+	item.lastSpaceID = col + "" + row;
+	item.currentSpaceID = col + "" + row;
+	item.width = width * grid_cell_size;
+	item.height = height * grid_cell_size;
+	item.name = name;
+
+	Konva.Image.fromURL(url, function(image) {
+		image.setAttrs({
+			x: col * grid_cell_size,
+			y: row * grid_cell_size,
+			width: width * grid_cell_size,
+			height: height * grid_cell_size,
+			draggable: true,
+			name: name,
+		});//setAttrs
+
+		//*
+		//code for drag and drop grid taken from:
+		//https://codepen.io/pierrebleroux/pen/ggpvxj
+		image.on('dragstart', (e) => {
+			image.moveToTop();
+		});
+
+		image.on('dragend', (e) => {
+			let col = Math.round(image.x() / grid_cell_size);
+			let row = Math.round(image.y() / grid_cell_size);
+			image.position({
+				x: col * grid_cell_size,
+				y: row * grid_cell_size
+			});
+
+			//If the user has moved it to another spot
+			//Update the last space and current space
+			//Otherwise the user has clicked the item and dropped it again, do nothing
+			if (item.currentSpaceID !== (col + "" + row)) {
+				item.lastSpaceID = item.currentSpaceID;
+				item.currentSpaceID = col + "" + row;
+			}
+
+			stage.batchDraw();
+		});
+		layer.add(image);
+		layer.batchDraw();
+	});
+
+	return item;
+}
+
+/**
+ * Creates and links all elements of inventory. Also manages collision handling
+ * between items. If a user tries to drop an item on another or a blocked space
+ * it will be moved back to it's original place.
  *
  */
-modal.addEventListener('shown.bs.modal', function(e) {
-	if (modal_body.offsetHeight > modal_body.offsetWidth) {
-		console.log("yea?");
-		create_stage('vertical');
-	}
-	else {
-		create_stage();
-	}
-});
+function display_inventory() {
+	let stage_wrapper = create_stage_wrapper();
+	let grid = create_grid_layer(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size, stage_wrapper.stage.width(), stage_wrapper.stage.height());
+	let item_layer = new Konva.Layer();
+
+	stage_wrapper.stage.add(grid);
+	stage_wrapper.stage.add(item_layer);
+
+	let character_items = {};
+
+	// Create a new item for each item passed in from the back end.
+        // The newItem function registers the image with the konva layer
+	// The Konva image object and the object returned from newItem are linked by "item.name"
+	// This way we can access the SpaceIDs for each konva image object
+	item_data.forEach((item, index) => {
+		let current_item = newItem(item.name, 0, index, 1, 1, media_url + item.image, stage_wrapper.grid_cell_size, item_layer, stage_wrapper.stage);
+		character_items[item.name] = current_item;
+	});
+
+	// If a drag event finishes on the item layer check the user has not dropped an item on top of another or a blocked cell.
+	item_layer.on('dragend', (e) => {
+		// The item that was moved in the character_items object.
+		let moved_item = character_items[e.target.name()];
+
+		// Loop through all other items
+		item_layer.children.each(function(child) {
+
+			// If we are not comparing the moved item to itself
+			if (child !== e.target) {
+				// Check to see if the new moved item's current location is the same as another item
+				if (moved_item.currentSpaceID === character_items[child.name()].currentSpaceID) {
+					// If so, move it back to its old location
+					e.target.to({
+						x: moved_item.lastSpaceID[0] * stage_wrapper.grid_cell_size,
+						y: moved_item.lastSpaceID[1] * stage_wrapper.grid_cell_size,
+						duration: 0.5,
+					})
+					// Update the current space ID. Important to do!
+					moved_item.currentSpaceID = moved_item.lastSpaceID;
+				}
+			}
+
+		});
+	});
+}
+
