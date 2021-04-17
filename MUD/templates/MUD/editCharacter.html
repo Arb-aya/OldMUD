@@ -1,0 +1,23 @@
+{% extends 'MUDBase.html' %} {% load static %} {% load socialaccount %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12 text-center">
+    <h2 class="page-title">{{ user.username }}'s Character</h2>
+  </div>
+
+  <div class="col-12 col-sm-8 offset-sm-2 col-lg-6 offset-lg-3 form-container">
+    {% include 'includes/EditCharacterForm.html' %}
+  </div>
+</div>
+
+<div class="button-container">
+	<button>Cancel</button>
+	<button>Save</button>
+</div>
+{% endblock %}
+
+{% block post_load_js %}
+{{ block.super }}
+<script src="{% static 'js/editform.js'%} " charset="utf-8"></script>
+{% endblock %}
