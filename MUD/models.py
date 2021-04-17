@@ -2,6 +2,30 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth import get_user_model
 
+from .models_enums import ItemType, Slot
+from . import defaultValues
+
+class Item(models.Model):
+
+    name = models.CharField(max_length=254)
+
+
+    image_url = models.URLField(max_length=1024, null=True, blank=True)
+
+    image = models.ImageField(
+        upload_to="items", max_length=1204, null=True, blank=True
+    )
+
+    type = models.CharField(default=ItemType.SHIELD, max_length=50)
+
+    slot = models.CharField(default=Slot.OFF_HAND, max_length=50)
+
+    description = models.TextField()
+
+    cost = models.DecimalField(max_digits=4, decimal_places=0)
+
+    def __str__(self):
+        return f"{self.id} - {self.name} "
 
 
 
