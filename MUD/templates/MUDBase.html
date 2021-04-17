@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load socialaccount %}
+
+{% block extra_css %}
+{{block.super}}
+	<link rel="stylesheet" href="{% static 'css/mud.css' %}" type="text/css" media="all">
+{% endblock %}
+
