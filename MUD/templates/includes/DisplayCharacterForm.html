@@ -1,0 +1,57 @@
+<form id="displayCharacterForm" accept-charset="utf-8">
+  <!-- POINTS -->
+  <fieldset class="row trait-container">
+    <div class="col-12">
+      <legend id="PointsTitle" class="trait-title">Points</legend>
+      <div class="input-group justify-content-center">
+        {{character_form.points | as_crispy_field}}
+      </div>
+    </div>
+  </fieldset>
+  <!-- /POINTS -->
+
+  <!-- CORE -->
+  <fieldset class="row trait-container">
+    <div class="col-12">
+      <legend>Core</legend>
+    </div>
+    <div class="col-12 trait">
+      <p id="HPTitle" class="trait-title">HP</p>
+      <div class="input-group justify-content-center">
+        {{ character_form.hp | as_crispy_field }}
+      </div>
+    </div>
+
+    <div class="trait">
+      <p id="MPTitle" class="trait-title">MP</p>
+      <div class="input-group justify-content-center">
+        {{ character_form.mp | as_crispy_field }}
+      </div>
+    </div>
+  </fieldset>
+  <!-- /CORE -->
+
+  <fieldset class="row trait-container">
+    <div class="col-12">
+      <legend>Traits</legend>
+      <div class="trait">
+        <p id="StrengthTitle" class="trait-title">Strength</p>
+        <div class="input-group justify-content-center">
+          {{ character_form.strength | as_crispy_field }}
+        </div>
+      </div>
+      <div class="trait">
+        <p id="AgilityTitle" class="trait-title">Agility</p>
+        <div class="input-group justify-content-center">
+          {{ character_form.agility | as_crispy_field }}
+        </div>
+      </div>
+      <div class="trait">
+        <p id="DexterityTitle" class="trait-title">Dexterity</p>
+        <div class="input-group justify-content-center">
+          {{ character_form.dexterity | as_crispy_field }}
+        </div>
+      </div>
+    </div>
+  </fieldset>
+</form>

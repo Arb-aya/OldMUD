@@ -1,0 +1,105 @@
+<form
+  id="editCharacterForm"
+  action="{% url 'edit_character' %}"
+  method="POST"
+  accept-charset="utf-8"
+>
+  {% csrf_token %}
+
+  <fieldset class="row trait-container">
+    <div class="col-12 trait">
+      <legend class="trait-title" id="PointsTitle">Points</legend>
+      <div class="input-group">{{character_form.points | as_crispy_field}}</div>
+    </div>
+  </fieldset>
+
+  <!-- CORE -->
+  <fieldset class="row trait-container">
+    <!-- HP -->
+    <div class="col-12">
+      <legend>Core</legend>
+    </div>
+
+    <div class="col-12 trait">
+      <p class="trait-title" id="HPTitle">HP</p>
+      <div class="input-group">
+        <button class="btn decButton" data-target="id_hp" {% if respec == False %} disabled {% endif %}>
+          <i class="fas fa-minus"></i>
+        </button>
+        {{character_form.hp | as_crispy_field }}
+        <button class="btn incButton" data-target="id_hp">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </div>
+    <!-- /HP -->
+
+    <!-- MP -->
+    <div class="col-12 trait">
+      <p  class="trait-title" id="MPTitle" class="mb-0">MP</p>
+      <div class="input-group">
+        <button class="btn decButton" data-target="id_mp" {% if respec == False %} disabled {% endif %}>
+          <i class="fas fa-minus"></i>
+        </button>
+        {{character_form.mp | as_crispy_field }}
+        <button class="btn incButton" data-target="id_mp">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </div>
+    <!-- /MP -->
+  </fieldset>
+  <!-- /CORE -->
+
+  <!-- TRAITS -->
+  <fieldset class="row trait-container">
+    <div class="col-12 trait">
+      <legend>Traits</legend>
+    </div>
+
+    <!-- STR -->
+    <div class="col-12 trait">
+      <p class="trait-title" id="StrengthTitle">Strength</p>
+      <div class="input-group justify-content-center">
+        <button class="btn decButton" data-target="id_strength" {% if respec == False %} disabled {% endif %}>
+          <i class="fas fa-minus"></i>
+        </button>
+        {{ character_form.strength | as_crispy_field }}
+        <button class="btn incButton" data-target="id_strength">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </div>
+    <!-- /STR -->
+
+    <!-- AGI -->
+    <div class="col-12 trait">
+      <p id="AgilityTitle" class="trait-title">Agility</p>
+      <div class="input-group justify-content-center">
+        <button class="btn decButton" data-target="id_agility" {% if respec == False %} disabled {% endif %}>
+          <i class="fas fa-minus"></i>
+        </button>
+        {{character_form.agility | as_crispy_field }}
+        <button class="btn incButton" data-target="id_agility">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </div>
+    <!-- /AGI -->
+
+    <!-- DEX -->
+    <div class="col-12 trait">
+      <p id="DexterityTitle" class="trait-title">Dexterity</p>
+      <div class="input-group justify-content-center">
+        <button class="btn decButton" data-target="id_dexterity" {% if respec == False %} disabled {% endif %}>
+          <i class="fas fa-minus"></i>
+        </button>
+        {{character_form.dexterity | as_crispy_field }}
+        <button class="btn incButton" data-target="id_dexterity">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </div>
+    <!-- /DEX -->
+  </fieldset>
+</form>
