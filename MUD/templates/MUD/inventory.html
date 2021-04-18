@@ -1,0 +1,46 @@
+{% extends 'MUDBase.html' %}
+{% load static %}
+{% load socialaccount %}
+
+{% block extra_js %}
+	<script src="{% static 'js/konva.min.js'%}"></script>
+{% endblock %}
+
+
+{% block content %}
+<div class="row">
+
+  <div class="col-12 text-center">
+    <h2 class="page-title">{{ user.username }}'s Character</h2>
+    {% if can_edit == True %}
+    <p>
+      <a class="edit-link" href="{% url 'edit_character'%}">
+	      Edit Character
+	      <i class="fas fa-edit icon"></i>
+      </a>
+    </p>
+    {% endif %}
+	{{ items|json_script:"itemdata" }}
+	{{ inventory_size|json_script:"inventory_size"}}
+	{{ MEDIA_URL|json_script:"media_url" }}
+  </div>
+
+  <div class="col-12">
+	  <div id="breakpoint-detect" class="d-md-none">
+		  <p> Biatch </p>
+	  </div>
+
+	  <div id="inventory">
+	  </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{{ items|json_script:'itemdata' }}
+{% block post_load_js%}
+	<script id="media_url" charset="utf-8"></script>
+	<script id="itemdata" charset="utf-8"></script>
+	<script id="inventory_size" charset="utf-8"></script>
+	<script src="{% static 'js/inventory.js' %}" type="module" charset="utf-8"></script>
+{% endblock %}

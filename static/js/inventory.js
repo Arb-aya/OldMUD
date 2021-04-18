@@ -3,29 +3,51 @@
  * as well as managing user interactions with the inventory
  */
 
-/**
- * Load in dynamic content from django using json_script filter
- *
- */
-let item_data, character_inventory_size, media_url;
+//Data on character items from backend
+let item_data;
+
+let character_inventory_size;
+
+//Prefix we need to access item images
+let media_url;
+
+// Do we initially display the grid horizontally or vertically
+let initial_direction;
 
 document.addEventListener('DOMContentLoaded', (e) => {
-	//Items data from django backend
+	// Load in data from backend. Passed via json_script filter.
 	item_data = JSON.parse(document.getElementById('itemdata').textContent);
-	//How much inventory space the chracter has
 	character_inventory_size = Number(JSON.parse(document.getElementById('inventory_size').textContent));
-	//The media url prefix. Used to access item images.
 	media_url = JSON.parse(document.getElementById('media_url').textContent);
 
-	display_inventory();
+	initial_direction = is_small_breakpoint() ? 'vertical' : 'horizontal';
+
+	display_inventory(initial_direction);
 });
+
 
 // If the window resizes we need to check if we want to change to a horizontal / vertical grid
 window.addEventListener('resize', (e) => {
-	//todo check parent div width and height and create vertical menu if needed
-	create_stage_wrapper();
+
+	// Only redraw the grid if it changes from horizontal to vertical or vice versa
+	let new_direction = is_small_breakpoint() ? 'vertical' : 'horizontal';
+	if (new_direction !== initial_direction) {
+		initial_direction = new_direction;
+		display_inventory(new_direction);
+	}
 });
 
+
+/**
+ * Used to detect if we are on a bootstrap "small" breakpoint.
+ * Checks to see if the element 'breakpoint-detect' which as d-md-none
+ * as a class is displayed.
+ *
+ */
+function is_small_breakpoint() {
+	let element = document.getElementById('breakpoint-detect');
+	return window.getComputedStyle(element).display === 'block';
+}
 
 
 function block_inventory_space(col, row, width, height, Layer) {
@@ -199,9 +221,12 @@ function newItem(name, col, row, width, height, url, grid_cell_size, layer, stag
  * between items. If a user tries to drop an item on another or a blocked space
  * it will be moved back to it's original place.
  *
+ * @param {String} direction - Display inventory vertically or horizontally
+ *
  */
-function display_inventory() {
-	let stage_wrapper = create_stage_wrapper();
+function display_inventory(direction) {
+
+	let stage_wrapper = create_stage_wrapper(direction);
 	let grid = create_grid_layer(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size, stage_wrapper.stage.width(), stage_wrapper.stage.height());
 	let item_layer = new Konva.Layer();
 
@@ -211,7 +236,7 @@ function display_inventory() {
 	let character_items = {};
 
 	// Create a new item for each item passed in from the back end.
-        // The newItem function registers the image with the konva layer
+	// The newItem function registers the image with the konva layer
 	// The Konva image object and the object returned from newItem are linked by "item.name"
 	// This way we can access the SpaceIDs for each konva image object
 	item_data.forEach((item, index) => {
@@ -246,3 +271,6 @@ function display_inventory() {
 	});
 }
 
+
+//TODO save items positions, so that if the grid is redrawn they're still in the correct grid.
+//TODO send updated information to the backend.
