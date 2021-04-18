@@ -14,11 +14,15 @@ let media_url;
 // Do we initially display the grid horizontally or vertically
 let initial_direction;
 
+// Need this to allow post data to server via AJAX
+let csrf_token;
 document.addEventListener('DOMContentLoaded', (e) => {
 	// Load in data from backend. Passed via json_script filter.
 	item_data = JSON.parse(document.getElementById('itemdata').textContent);
 	character_inventory_size = Number(JSON.parse(document.getElementById('inventory_size').textContent));
 	media_url = JSON.parse(document.getElementById('media_url').textContent);
+
+	csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
 	initial_direction = is_small_breakpoint() ? 'vertical' : 'horizontal';
 
@@ -382,7 +386,25 @@ function manage_inventory(direction) {
 				}
 				else {
 					// Save changes to inventory
-					// Not sure if doing this afte every move is a good idea. But it's the way I'm doing it for now.
+					// Not sure if doing this after every move is a good idea. But it's the way I'm doing it for now.
+					fetch('/character/update_item', {
+						credentials: 'same-origin',
+						headers: {
+							'content-type': 'application/json; charset=utf-8',
+							'X-CSRFToken': csrf_token
+						},
+						method: 'post',
+						body: JSON.stringify({
+							'item_data': {
+
+								name: moved_item.name,
+								lastSpaceID: moved_item.lastSpaceID,
+								currentSpaceID: moved_item.currentSpaceID,
+							}
+						}),
+					})
+						//TODO handle response and feedback to user in more userfriendly manner
+						.then((response) => console.log(response));
 				}
 			}
 
@@ -391,6 +413,4 @@ function manage_inventory(direction) {
 
 }
 
-//TODO save items positions, so that if the grid is redrawn they're still in the correct grid.
-//TODO send updated information to the backend.
 //TODO read item width and height from django model

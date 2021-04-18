@@ -33,9 +33,9 @@
 	  </div>
   </div>
 
+{% csrf_token %}
 </div>
 {% endblock %}
-
 {{ items|json_script:'itemdata' }}
 {% block post_load_js%}
 	<script id="media_url" charset="utf-8"></script>

@@ -5,10 +5,10 @@ from django.contrib.auth import get_user_model
 from .models_enums import ItemType, Slot
 from . import defaultValues
 
+
 class Item(models.Model):
 
     name = models.CharField(max_length=254)
-
 
     image_url = models.URLField(max_length=1024, null=True, blank=True)
 
@@ -20,13 +20,16 @@ class Item(models.Model):
 
     slot = models.CharField(default=Slot.OFF_HAND, max_length=50)
 
+    lastSpaceID = models.CharField(default="no", max_length=2)
+
+    currentSpaceID = models.CharField(default="no", max_length=2)
+
     description = models.TextField()
 
     cost = models.DecimalField(max_digits=4, decimal_places=0)
 
     def __str__(self):
         return f"{self.id} - {self.name} "
-
 
 
 class Character(models.Model):
@@ -98,4 +101,3 @@ class Character(models.Model):
 
     def __str__(self):
         return f"hp{self.hp} mp{self.mp} str{self.strength} agi{self.agility} dex{self.dexterity}"
-
