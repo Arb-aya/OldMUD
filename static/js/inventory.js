@@ -39,9 +39,8 @@ window.addEventListener('resize', (e) => {
 	// Only redraw the grid if it changes from horizontal to vertical or vice versa
 	let new_direction = is_small_breakpoint() ? 'vertical' : 'horizontal';
 	if (new_direction !== initial_direction) {
-		let old_spaces = inventory_manager.spaces;
 		initial_direction = new_direction;
-		inventory_manager = manage_inventory(new_direction, old_spaces);
+		inventory_manager.redraw(new_direction);
 	}
 });
 
@@ -58,18 +57,6 @@ function is_small_breakpoint() {
 }
 
 
-function block_inventory_space(col, row, width, height, Layer) {
-	const blocked_space = new Konva.Rect({
-		x: col * GRID_CELL_SIZE,
-		y: row * GRID_CELL_SIZE,
-		width: width * GRID_CELL_SIZE,
-		height: height * GRID_CELL_SIZE,
-		fill: 'red',
-		opacity: 0.5
-	});
-
-	return blocked_space;
-}
 
 /**
  * Creates a Konva canvas with a grid. User items are displayed
@@ -78,45 +65,60 @@ function block_inventory_space(col, row, width, height, Layer) {
  *
  * @param {String} type - horizontal / vertical menu
  */
-function create_stage_wrapper(type = 'horizontal') {
+function create_stage_wrapper(direction = 'horizontal') {
 
 	let stage_wrapper = {};
 	const GRID_CELL_SIZE = 100;
 
+	let rows, cols;
+	let width, height;
+	let display_size;
+	let stage;
 
 	// Work out how many slots to display
-	let display_size = character_inventory_size;
+	function draw(direction) {
+		display_size = character_inventory_size;
 
-	if (character_inventory_size % 2 !== 0) {
-		display_size = character_inventory_size + 1;
+		if (character_inventory_size % 2 !== 0) {
+			display_size = character_inventory_size + 1;
+		}
+
+
+		// Do we display them vertically or horizontally
+		cols = display_size / 2;
+		rows = 2;
+
+		if (direction === "vertical") {
+			cols = 2;
+			rows = display_size / 2;
+		}
+
+		stage_wrapper.cols = cols;
+		stage_wrapper.rows = rows;
+
+		width = cols * GRID_CELL_SIZE;
+		height = rows * GRID_CELL_SIZE;
+
+		if (!stage) {
+			stage = new Konva.Stage({
+				container: 'inventory',
+				width: width,
+				height: height
+			});
+		}
+		else {
+			stage.width(width);
+			stage.height(height);
+		}
 	}
 
-
-	// Do we display them vertically or horizontally
-	let cols = display_size / 2;
-	let rows = 2;
-
-	if (type === "vertical") {
-		cols = 2;
-		rows = display_size / 2;
-	}
+	draw(direction);
 
 
-	const width = cols * GRID_CELL_SIZE;
-	const height = rows * GRID_CELL_SIZE;
-
-
-
-	var stage = new Konva.Stage({
-		container: 'inventory',
-		width: width,
-		height: height
-	});
-
-	stage_wrapper.cols = cols;
-	stage_wrapper.rows = rows;
+	stage_wrapper.display_size = display_size;
 	stage_wrapper.grid_cell_size = GRID_CELL_SIZE;
 	stage_wrapper.stage = stage;
+	stage_wrapper.draw = draw;
 
 	return stage_wrapper;
 }
@@ -131,28 +133,174 @@ function create_stage_wrapper(type = 'horizontal') {
  * @param {Number} height                                           - Maximum height of the stage to draw on
  */
 function create_grid_layer(rows, cols, grid_cell_size, width, height) {
-	var grid_layer = new Konva.Layer();
+	let grid_layer_wrapper = {};
+	let grid_layer;
 
-	for (var i = 0; i <= cols; i++) {
-		grid_layer.add(new Konva.Line({
-			points: [Math.round(i * grid_cell_size), 0, Math.round(i * grid_cell_size), height],
-			stroke: '#ddd',
-			strokewidth: 1,
-		}));
+	function draw(rows, cols, grid_cell_size, width, height) {
+
+		if (!grid_layer) {
+			grid_layer = new Konva.Layer();
+		}
+		else {
+			grid_layer.destroyChildren();
+			grid_layer.clear();
+		}
+
+		for (let i = 0; i <= cols; i++) {
+			grid_layer.add(new Konva.Line({
+				points: [Math.round(i * grid_cell_size), 0, Math.round(i * grid_cell_size), height],
+				stroke: '#ddd',
+				strokewidth: 1,
+			}));
+		}
+
+		grid_layer.add(new Konva.Line({ points: [0, 0, 10, 10] }));
+		for (let j = 0; j <= rows; j++) {
+			grid_layer.add(new Konva.Line({
+				points: [0, Math.round(j * grid_cell_size), width, Math.round(j * grid_cell_size)],
+				stroke: '#ddd',
+				strokewidth: 1,
+			}));
+		}
+		grid_layer.batchDraw();
 	}
 
-	grid_layer.add(new Konva.Line({ points: [0, 0, 10, 10] }));
-	for (var j = 0; j <= rows; j++) {
-		grid_layer.add(new Konva.Line({
-			points: [0, Math.round(j * grid_cell_size), width, Math.round(j * grid_cell_size)],
-			stroke: '#ddd',
-			strokewidth: 1,
-		}));
-	}
+	draw(rows, cols, grid_cell_size, width, height);
 
-	return grid_layer;
+	grid_layer_wrapper.draw = draw;
+	grid_layer_wrapper.layer = grid_layer;
+	return grid_layer_wrapper;
 }
 
+
+/**
+ * Creates a wrapper around a Konva layer used for items.
+ * The wrapper provides functionality for managing free spaces
+ * in the inventory.
+ *
+ * @param {Number} rows - Number of rows
+ * @param {Number} cols - Number of columns
+ */
+function create_item_layer_wrapper(rows, cols) {
+
+	let layer_wrapper = {};
+	let layer;
+	let spaces = {};
+	let old_spaces = {};
+
+	function create(rows, cols) {
+
+		old_spaces = Object.assign({}, spaces);
+
+		if (!layer) {
+			layer = new Konva.Layer();
+		}
+		else {
+			layer.clear();
+		}
+
+
+		spaces = {}
+
+		for (let i = 0; i < rows; i++) {
+			for (let j = 0; j < cols; j++) {
+				spaces[i + "" + j] = true;
+			}
+		}
+
+		layer_wrapper.spaces = spaces;
+		layer_wrapper.old_spaces = old_spaces;
+	};
+
+	create(rows, cols);
+
+	/*
+	 * Converts a spaceid to equivalent index
+	  @param {String} space_id - space id of cell: row + "" + col
+	  @return {Integer} -1 if not found, otherwise the index of the cell.
+	 */
+	layer_wrapper.spaceid_to_index = function(space_id) {
+		const available_spaces = Object.getOwnPropertyNames(spaces).sort();
+		return available_spaces.findIndex((space) => space === space_id);
+	}
+
+	/**
+	 * Converts an id to spaceid equivalent
+	 *
+	 * @param {Number} index - The index to convert
+	 * @return {String} Empty string if not found, otherwise the spaceid
+	 */
+	layer_wrapper.index_to_spaceid = function(index) {
+		const available_spaces = Object.getOwnPropertyNames(spaces).sort();
+		if (index < 0 || index > available_spaces.length) {
+			return ""
+		}
+		return available_spaces[index];
+	}
+
+	/**
+	 * Check if a space is empty
+	 *
+	 * @param {String} spaceID - (col+""+row) space to check
+	 * @return {Boolean} True if it is empty, false if not.
+	 */
+	layer_wrapper.is_space_empty = function(spaceID) {
+		if (spaceID in spaces) {
+			if (spaces[spaceID] === true) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * If spaceID is in spaces mark it as occupied
+	 *
+	 * @param {String} spaceID - The string representing the space (col+""+row)
+	 */
+	layer_wrapper.add_item_to = function(spaceID, item_name) {
+		if (spaceID in spaces) {
+			spaces[spaceID] = item_name;
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * If spaceID is in spaces mark it as empty
+	 *
+	 * @param {String} spaceID - The string representing the space (col+""+row)
+	 */
+	layer_wrapper.remove_item_from = function(spaceID) {
+		if (spaceID in spaces) {
+			spaces[spaceID] = true;
+		}
+	}
+	/**
+	 * Checks for the next free space in the inventory
+	 *
+	 * @return {String} The space ID of the next free space (col+""+row) or "none" if no free spaces
+	 */
+	layer_wrapper.next_empty_space = function() {
+		// Turn the property names of the this.spaces object into an array.
+		// Filter out any spaces that are "false" as they are not free
+		// Sort the array.
+		// The next free space will be the first element of this array
+		let free_spaces = Object.getOwnPropertyNames(spaces).filter((space) => spaces[space]).sort();
+
+		if (free_spaces.length > 0) {
+			return free_spaces[0];
+		}
+		else {
+			return "none";
+		}
+	};
+
+	layer_wrapper.layer = layer;
+	layer_wrapper.create = create;
+
+	return layer_wrapper;
+};
 
 /**
  * Creates a new image object per item passed in from the backend.
@@ -182,7 +330,6 @@ function new_item(name, row, col, width, height, url, grid_cell_size, item_layer
 	item.height = height * grid_cell_size;
 	item.name = name;
 
-	item_layer.add_item_to(item.currentSpaceID, name);
 
 	Konva.Image.fromURL(url, function(image) {
 		image.setAttrs({
@@ -221,95 +368,36 @@ function new_item(name, row, col, width, height, url, grid_cell_size, item_layer
 
 			stage.batchDraw();
 		});
+
+		item_layer.add_item_to(item.currentSpaceID, name);
 		item_layer.layer.add(image);
 		item_layer.layer.batchDraw();
 	});
 
 	return item;
 }
+function block_inventory_space(name, row, col, width, height, cell_size, layer_wrapper) {
+	const wrapper = {}
+	wrapper.lastSpaceID = row + "" + col;
+	wrapper.currentSpaceID = row + "" + col;
+	wrapper.name = name;
 
+	layer_wrapper.add_item_to(wrapper.currentSpaceID, name);
 
-/**
- * Creates a wrapper around a Konva layer used for items.
- * The wrapper provides functionality for managing free spaces
- * in the inventory.
- *
- * Design pattern taken from: https://www.dofactory.com/javascript/design-patterns/singleton
- * @param {Number} rows - Number of rows
- * @param {Number} cols - Number of columns
- */
-function create_item_layer_wrapper(rows, cols) {
+	const blocked_space = new Konva.Rect({
+		x: col * cell_size,
+		y: row * cell_size,
+		width: width * cell_size,
+		height: height * cell_size,
+		fill: 'red',
+		opacity: 0.3,
+		name: name,
+	});
 
-	let layer_wrapper = {};
-	let spaces = {};
-
-	for (let i = 0; i < rows; i++) {
-		for (let j = 0; j < cols; j++) {
-			spaces[i + "" + j] = true;
-		}
-	}
-
-	layer_wrapper.layer = new Konva.Layer();
-	layer_wrapper.layer.destroyChildren();
-	layer_wrapper.spaces = spaces;
-
-	/**
-	 * Check if a space is empty
-	 *
-	 * @param {String} spaceID - (col+""+row) space to check
-	 * @return {Boolean} True if it is empty, false if not.
-	 */
-	layer_wrapper.is_space_empty = function(spaceID) {
-		if (spaceID in this.spaces) {
-			if (this.spaces[spaceID] === true) {
-				return true;
-			}
-		}
-		return false;
-	};
-	/**
-	 * If spaceID is in spaces mark it as occupied
-	 *
-	 * @param {String} spaceID - The string representing the space (col+""+row)
-	 */
-	layer_wrapper.add_item_to = function(spaceID, item_name) {
-		if (spaceID in this.spaces) {
-			this.spaces[spaceID] = item_name;
-		}
-	};
-
-	/**
-	 * If spaceID is in spaces mark it as empty
-	 *
-	 * @param {String} spaceID - The string representing the space (col+""+row)
-	 */
-	layer_wrapper.remove_item_from = function(spaceID) {
-		if (spaceID in this.spaces) {
-			this.spaces[spaceID] = true;
-		}
-	}
-	/**
-	 * Checks for the next free space in the inventory
-	 *
-	 * @return {String} The space ID of the next free space (col+""+row) or "none" if no free spaces
-	 */
-	layer_wrapper.next_empty_space = function() {
-		// Turn the property names of the this.spaces object into an array.
-		// Filter out any spaces that are "false" as they are not free
-		// Sort the array.
-		// The next free space will be the first element of this array
-		let free_spaces = Object.getOwnPropertyNames(this.spaces).filter((space) => this.spaces[space]).sort();
-
-		if (free_spaces.length > 0) {
-			return free_spaces[0];
-		}
-		else {
-			return "none";
-		}
-	};
-	return layer_wrapper;
-};
-
+	layer_wrapper.layer.add(blocked_space);
+	layer_wrapper.layer.batchDraw();
+	return wrapper;
+}
 
 /**
  * Creates and links all elements of inventory. Also manages collision handling
@@ -320,108 +408,106 @@ function create_item_layer_wrapper(rows, cols) {
  * @param {Object} previous_item_locations - Previous item_layer_wrapper.spaces
  * @return {Object} - Object that gives access to the item_layer_wrapper.spaces
  */
-function manage_inventory(direction, previous_item_locations = null) {
+function manage_inventory(direction) {
 	let inventory = {}
 
 	let stage_wrapper = create_stage_wrapper(direction);
 	let grid = create_grid_layer(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size, stage_wrapper.stage.width(), stage_wrapper.stage.height());
 	let item_layer_wrapper = create_item_layer_wrapper(stage_wrapper.rows, stage_wrapper.cols);
 
-	inventory.spaces = item_layer_wrapper.spaces;
-
-	stage_wrapper.stage.add(grid);
-	stage_wrapper.stage.add(item_layer_wrapper.layer);
-
-
 	// Used to store item wrapper classes. These are used in collision detection.
 	let character_items = {};
 
-	// If we have previous item locations, map them to the new grid.
-	// Otherwise just place the items
-	(previous_item_locations) ? place_old_items() : place_items();
 
-	/**
-	 * This function is called if the grid is redrawn to a window resize.
-	 * It maps old item locations to the equivalent on the new grid
-	 *
-	 */
-	function place_old_items() {
-		// Get an array of available spaceIDs in order
-		let available_spaces = Object.entries(item_layer_wrapper.spaces).sort();
+	function redraw(direction) {
+		stage_wrapper.draw(direction);
+		grid.draw(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size, stage_wrapper.stage.width(), stage_wrapper.stage.height());
+		item_layer_wrapper.create(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size);
 
-		// Loop over the old spaceIDs (after they have also been sorted
-		Object.entries(previous_item_locations).sort().forEach((item_location, index) => {
-			// If we have found an item (i.e the current "item_location"
-			let old_item_name = item_location[1];
-			if (old_item_name !== true) {
-				// The new location is the location stored in available_spaces at the same index
-				let new_location = available_spaces[index][0];
-				// Get the item data for the found item
-				let item_datum = item_data.find(item => item.name.trim() === old_item_name);
-				//Add the new item to the layer in the new location
-				let current_item = new_item(item_location[1], new_location[0], new_location[1], item_datum.width, item_datum.height, media_url + item_datum.image, stage_wrapper.grid_cell_size, item_layer_wrapper, stage_wrapper.stage);
-				//Don't forget to add it to character_items for use in collision detection
-				character_items[item_location[1]] = current_item;
+		Object.entries(item_layer_wrapper.old_spaces).sort().forEach((space, index) => {
+			console.log(space);
+			if (space[1] !== true) {
+				let item_name = space[1];
+				let new_location = item_layer_wrapper.index_to_spaceid(index);
+
+				item_layer_wrapper.add_item_to(new_location,space[1]);
+
+				character_items[item_name].lastSpaceID = new_location;
+				character_items[item_name].currentSpaceID = new_location;
+
+				let layer_item = item_layer_wrapper.layer.findOne(node => node.name() === item_name.trim());
+
+				layer_item.absolutePosition({
+					x: new_location[1] * stage_wrapper.grid_cell_size,
+					y: new_location[0] * stage_wrapper.grid_cell_size,
+				});
+
+
 
 			}
 		});
+		item_layer_wrapper.layer.batchDraw();
 	}
 
-	/**
-	 * Places items in inventory for first time
-	 *
-	 */
-	function place_items() {
-		// Sort the items into those that have an assigned space
-		// and those that don't. "no" is the default value provided by
-		// the Item django model (see MUD/models.py)
-		let placed_items = [];
-		let unplaced_items = [];
-		item_data.forEach((item) => {
-			if (item.currentSpaceID === "no") {
-				unplaced_items.push(item);
-			}
-			else {
-				placed_items.push(item);
-			}
-		});
 
-		/*
-			* Placing items goes as follows:
-			* 1. pass information into new_item method.
-			* 	This registers the image on the konva canvas and returns a wrapper object.
-			* 	It also updates the free spaces in the item_layer_wrapper
-			* 2. Add the item_wrapper object to character_items
-		*/
+	//Block out any inventory space that was added as an extra
+	//Before placing any items
+	//if (character_inventory_size !== stage_wrapper.display_size) {
+	//const blocked = block_inventory_space("blocked", stage_wrapper.rows - 1, stage_wrapper.cols - 1, 1, 1, stage_wrapper.grid_cell_size, item_layer_wrapper);
+	//character_items[blocked.name] = blocked;
+	//}
 
-		//Place placed items first, unplaced items can fill in the empty spaces
-		placed_items.forEach((item) => {
-			let current_item = new_item(item.name, item.currentSpaceID[0], item.currentSpaceID[1], item.width, item.height, media_url + item.image, stage_wrapper.grid_cell_size, item_layer_wrapper, stage_wrapper.stage);
+	// Sort the items into those that have an assigned space
+	// and those that don't. "no" is the default value provided by
+	// the Item django model (see MUD/models.py)
+	let placed_items = [];
+	let unplaced_items = [];
+	item_data.forEach((item) => {
+		if (item.currentSpaceID === "no") {
+			unplaced_items.push(item);
+		}
+		else {
+			placed_items.push(item);
+		}
+	});
 
+	/*
+		* Placing items goes as follows:
+		* 1. pass information into new_item method.
+		* 	This registers the image on the konva canvas and returns a wrapper object.
+		* 	It also updates the free spaces in the item_layer_wrapper
+		* 2. Add the item_wrapper object to character_items
+	*/
+
+	//Place placed items first, unplaced items can fill in the empty spaces
+	placed_items.forEach((item) => {
+		const item_position = item_layer_wrapper.index_to_spaceid(item.currentSpaceIndex);
+		let current_item = new_item(item.name, item_position[0], item_position[1], item.width, item.height, media_url + item.image, stage_wrapper.grid_cell_size, item_layer_wrapper, stage_wrapper.stage);
+
+		character_items[item.name] = current_item;
+	});
+
+	unplaced_items.forEach((item) => {
+		let next_space = item_layer_wrapper.next_empty_space();
+		if (next_space !== "none") {
+			let current_item = new_item(item.name, next_space[0], next_space[1], item.width, item.height, media_url + item.image, stage_wrapper.grid_cell_size, item_layer_wrapper, stage_wrapper.stage);
 			character_items[item.name] = current_item;
-		});
+			save_item(item.name, item_layer_wrapper.spaceid_to_index(next_space), item_layer_wrapper.spaceid_to_index(next_space));
+		}
+		else {
+			console.log("No more free spaces");
+		}
+	});
 
-		unplaced_items.forEach((item) => {
-			let next_space = item_layer_wrapper.next_empty_space();
-			if (next_space !== "none") {
-				let current_item = new_item(item.name, next_space[0], next_space[1], item.width, item.height, media_url + item.image, stage_wrapper.grid_cell_size, item_layer_wrapper, stage_wrapper.stage);
-				character_items[item.name] = current_item;
-				save_item(item.name, next_space, next_space);
-			}
-			else {
-				console.log("No more free spaces");
-			}
-		});
-	}// place_items()
 
 	/**
 	 * POSTs updated location information for item "name" to server
 	 *
 	 * @param {String} name - Name of the item
-	 * @param {String} lastSpaceID - The last space this item occupied
-	 * @param {String} currentSpaceID - The current space this item occupies
+	 * @param {String} lastSpaceIndex - The last space this item occupied
+	 * @param {String} currentSpaceIndex - The current space this item occupies
 	 */
-	function save_item(name, lastSpaceID, currentSpaceID) {
+	function save_item(name, lastSpaceIndex, currentSpaceIndex) {
 		fetch('/character/update_item', {
 			credentials: 'same-origin',
 			headers: {
@@ -433,21 +519,24 @@ function manage_inventory(direction, previous_item_locations = null) {
 				'item_data': {
 
 					name: name,
-					lastSpaceID: lastSpaceID,
-					currentSpaceID: currentSpaceID,
+					lastSpaceIndex: lastSpaceIndex,
+					currentSpaceIndex: currentSpaceIndex,
 				}
 			}),
 		})
 			//TODO handle response and feedback to user in more userfriendly manner
 			.then((response) => {
 				if (response.status === 404) {
-					console.log("Couldn't save position update");
-				}
-				else {
-					console.log("saved" + currentSpaceID);
+					throw "Could not save";
 				}
 			});
 	}// save_item()
+
+
+
+	/*
+	* Collision detection
+	*/
 
 	// If a drag event finishes on the item layer check the user has not dropped an item on top of another or a blocked cell.
 	item_layer_wrapper.layer.on('dragend', (e) => {
@@ -457,16 +546,21 @@ function manage_inventory(direction, previous_item_locations = null) {
 		// If there is only one item, any drag is safe so save it.
 		if (item_layer_wrapper.layer.children.length === 1) {
 			if (moved_item.lastSpaceID !== moved_item.currentSpaceID) {
-				save_item(moved_item.name, moved_item.lastSpaceID, moved_item.currentSpaceID);
+				try {
+					save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(moved_item.currentSpaceID))
+					console.log("saved" + moved_item.currentSpaceID);
+				}
+				catch (e) {
+					console.log("not saved");
+				}
 			}
 		}
 		else {
-
 			// Loop through all other items
+			let can_save = true;
 			item_layer_wrapper.layer.children.each(function(child) {
-
 				// If we are not comparing the moved item to itself
-				if (child !== e.target) {
+				if (can_save && child !== e.target) {
 					// Check to see if the new moved item's current location is the same as another item
 					if (moved_item.currentSpaceID === character_items[child.name()].currentSpaceID) {
 						// If so, move it back to its old location
@@ -477,20 +571,30 @@ function manage_inventory(direction, previous_item_locations = null) {
 						})
 						// Update the current space ID. Important to do!
 						moved_item.currentSpaceID = moved_item.lastSpaceID;
-					}
-					else {
-						// Save changes to inventory
-						// Not sure if doing this after every move is a good idea. But it's the way I'm doing it for now.
-						save_item(moved_item.name, moved_item.lastSpaceID, moved_item.currentSpaceID);
+						can_save = false;
 					}
 				}
-
 			});
+			if (can_save && moved_item.lastSpaceID !== moved_item.currentSpaceID) {
+				// Save changes to inventory
+				// Not sure if doing this after every move is a good idea. But it's the way I'm doing it for now.
+				if (save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(moved_item.currentSpaceID))) {
+					item_layer_wrapper.add_item_to(moved_item.currentSpaceID, moved_item.name);
+					item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
+				}
+			}
 		}
 	});
+
+	stage_wrapper.stage.add(grid.layer);
+	stage_wrapper.stage.add(item_layer_wrapper.layer);
+
+	inventory.redraw = redraw
 
 	return inventory;
 }
 
+//TODO: Implement blocked inventory spaces
+//TODO: Make konva layer in item_layer_wrapper a singleton?
 //TODO: When items start to occupy more than one space, you will need to rework how you place items. For example if an item has a width of two it needs to adjacent spaces.
 //TODO: Provide functionality to filter items to display based on Type and Slot
