@@ -328,7 +328,7 @@ function create_item_layer_wrapper(rows, cols) {
  * @param {String} url                    - URL to the image for the item
  * @param {Number} grid_cell_size         - The size of one grid cell in pixels
  * @param {Item Layer Wrapper} item_layer - The Konva layer to draw the item on (usually the layer returned from create_item_layer_wrapper)
- * @param {Konva Stage Object} stage      - Konva Stage object that the item_layer will be added to (usually the stage from create_stage_wrapper)
+ * @param {Stage Wrapper} stage           - Stage wrapper object that the item_layer will be added to (usually the stage from create_stage_wrapper)
  * @returns {Object} - Object exposes the following for each item:
  * 			obj.name         - name of the item
  * 			obj.lastSpaceID  - the last cell in the grid that the item occupied
@@ -336,7 +336,7 @@ function create_item_layer_wrapper(rows, cols) {
  * 			obj.width        - The width of the item (in grid cells)
  * 			obj.height       - The height of the item (in grid cells)
  */
-function new_item(name, row, col, width, height, url, grid_cell_size, item_layer, stage) {
+function new_item(name, row, col, width, height, url, item_layer, stage_wrapper) {
 
 	// Object returned from this method
 	let item = {};
@@ -345,17 +345,17 @@ function new_item(name, row, col, width, height, url, grid_cell_size, item_layer
 	// We keep track of the last space occupied by an item as well as the current one.
 	item.lastSpaceID = row + "" + col;
 	item.currentSpaceID = row + "" + col;
-	item.width = width * grid_cell_size;
-	item.height = height * grid_cell_size;
+	item.width = width * stage_wrapper.grid_cell_size;
+	item.height = height * stage_wrapper.grid_cell_size;
 	item.name = name;
 
 
 	Konva.Image.fromURL(url, function(image) {
 		image.setAttrs({
-			x: col * grid_cell_size,
-			y: row * grid_cell_size,
-			width: width * grid_cell_size,
-			height: height * grid_cell_size,
+			x: col * stage_wrapper.grid_cell_size,
+			y: row * stage_wrapper.grid_cell_size,
+			width: width * stage_wrapper.grid_cell_size,
+			height: height * stage_wrapper.grid_cell_size,
 			draggable: true,
 			name: name,
 		});//setAttrs
@@ -368,14 +368,23 @@ function new_item(name, row, col, width, height, url, grid_cell_size, item_layer
 		});
 
 		image.on('dragend', (e) => {
-			let col = Math.round(image.x() / grid_cell_size);
-			let row = Math.round(image.y() / grid_cell_size);
-			image.position({
-				x: col * grid_cell_size,
-				y: row * grid_cell_size
-			});
+			let col = Math.round(image.x() / stage_wrapper.grid_cell_size);
+			let row = Math.round(image.y() / stage_wrapper.grid_cell_size);
 
-			stage.batchDraw();
+			if (col < 0 || row < 0 || col >= stage_wrapper.cols || row >= stage_wrapper.rows) {
+				image.position({
+					x: item.lastSpaceID[1] * stage_wrapper.grid_cell_size,
+					y: item.lastSpaceID[0] * stage_wrapper.grid_cell_size,
+				})
+			}
+			else {
+				image.position({
+					x: col * stage_wrapper.grid_cell_size,
+					y: row * stage_wrapper.grid_cell_size
+				});
+			}
+
+			stage_wrapper.stage.batchDraw();
 		});
 
 		item_layer.layer.add(image);
@@ -404,7 +413,7 @@ function new_item(name, row, col, width, height, url, grid_cell_size, item_layer
  * 			obj.lastSpaceID  - the last cell in the grid that the item occupied
  * 			obj.currentSpace - the current cell in the grid that the item occupies
  */
-function block_inventory_space(name="blocked", row, col, width, height, cell_size, layer_wrapper) {
+function block_inventory_space(name = "blocked", row, col, width, height, cell_size, layer_wrapper) {
 	const wrapper = {}
 	wrapper.lastSpaceID = row + "" + col;
 	wrapper.currentSpaceID = row + "" + col;
@@ -511,7 +520,7 @@ function manage_inventory(direction) {
 	placed_items.forEach((item) => {
 		const item_position = item_layer_wrapper.index_to_spaceid(item.currentSpaceIndex);
 
-		let current_item = new_item(item.name, item_position[0], item_position[1], item.width, item.height, media_url + item.image, stage_wrapper.grid_cell_size, item_layer_wrapper, stage_wrapper.stage);
+		let current_item = new_item(item.name, item_position[0], item_position[1], item.width, item.height, media_url + item.image, item_layer_wrapper, stage_wrapper);
 
 		character_items[item.name] = current_item;
 	});
@@ -520,7 +529,7 @@ function manage_inventory(direction) {
 	unplaced_items.forEach((item) => {
 		let next_space = item_layer_wrapper.next_empty_space();
 		if (next_space !== "none") {
-			let current_item = new_item(item.name, next_space[0], next_space[1], item.width, item.height, media_url + item.image, stage_wrapper.grid_cell_size, item_layer_wrapper, stage_wrapper.stage);
+			let current_item = new_item(item.name, next_space[0], next_space[1], item.width, item.height, media_url + item.image, item_layer_wrapper, stage_wrapper);
 			character_items[item.name] = current_item;
 			save_item(item.name, item_layer_wrapper.spaceid_to_index(next_space), item_layer_wrapper.spaceid_to_index(next_space));
 		}
@@ -582,8 +591,15 @@ function manage_inventory(direction) {
 			if (moved_item.lastSpaceID !== new_possible_location) {
 				try {
 					save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location));
+
+					//Update in layer manager
 					item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
 					item_layer_wrapper.add_item_to(new_possible_location, moved_item.name);
+
+					//Update item
+					moved_item.lastSpaceID = moved_item.currentSpaceID;
+					moved_item.currentSpaceID = new_possible_location;
+
 					console.log("saved" + moved_item.currentSpaceID);
 				}
 				catch (e) {
@@ -621,10 +637,14 @@ function manage_inventory(direction) {
 					//Save the changes
 					save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location));
 
-					//Update information in internal state
+					//Update layer manager
 					moved_item.currentSpaceID = new_possible_location;
 					item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
 					item_layer_wrapper.add_item_to(new_possible_location, moved_item.name);
+
+					//Update item
+					moved_item.lastSpaceID = moved_item.currentSpaceID;
+					moved_item.currentSpaceID = new_possible_location;
 
 					console.log("saved");
 				}
