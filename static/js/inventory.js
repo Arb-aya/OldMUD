@@ -1,11 +1,15 @@
 /**
  * This file is responsible for displaying the inventory to the user
- * as well as managing user interactions with the inventory
+ * as well as managing user interactions with the inventory.
+ *
+ * It provides the functionality to prevent the user from using selected
+ * cells in the grid.
  */
 
-//Data on character items from backend
+//Contains character item data loaded in from backend
 let item_data;
 
+//Contains character inventory size loaded in from backend
 let character_inventory_size;
 
 //Prefix we need to access item images
@@ -21,13 +25,14 @@ let csrf_token;
 let inventory_manager;
 
 document.addEventListener('DOMContentLoaded', (e) => {
+
 	// Load in data from backend. Passed via json_script filter.
 	item_data = JSON.parse(document.getElementById('itemdata').textContent);
 	character_inventory_size = Number(JSON.parse(document.getElementById('inventory_size').textContent));
 	media_url = JSON.parse(document.getElementById('media_url').textContent);
-
 	csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
+	// See is_small_breakpoint for more details
 	initial_direction = is_small_breakpoint() ? 'vertical' : 'horizontal';
 
 	inventory_manager = manage_inventory(initial_direction);
@@ -47,7 +52,7 @@ window.addEventListener('resize', (e) => {
 
 /**
  * Used to detect if we are on a bootstrap "small" breakpoint.
- * Checks to see if the element 'breakpoint-detect' which as d-md-none
+ * Checks to see if the element 'breakpoint-detect' which has d-md-none
  * as a class is displayed.
  *
  */
@@ -59,15 +64,22 @@ function is_small_breakpoint() {
 
 
 /**
- * Creates a Konva canvas with a grid. User items are displayed
- * in the grid, the user can drag and drop the items into
- * different slots
+ * Creates an object with properties and methods that allow
+ * the management of the konva stage object
  *
- * @param {String} type - horizontal / vertical menu
+ * @param {String} [direction] - The way are we displaying the grid. horizontal or vertical
+ * @return {Object} Object that allows users to access:
+ * 		object.cols                                      - Number of columns in the stage (dictated by GRID_CELL_SIZE)
+ * 		object.row                                       - Number of rows in the stage (dictated by GRID_CELL_SIZE)
+ * 		object.stage                                     - The konva stage object
+ * 		object.display_size                              - The number of cells to display to the user. Might differ from
+				 * 				   character inventory size
  */
 function create_stage_wrapper(direction = 'horizontal') {
 
 	let stage_wrapper = {};
+
+	//Change this as needed.
 	const GRID_CELL_SIZE = 100;
 
 	let rows, cols;
@@ -75,14 +87,16 @@ function create_stage_wrapper(direction = 'horizontal') {
 	let display_size;
 	let stage;
 
-	// Work out how many slots to display
 	function draw(direction) {
+
+		// Work out how many cells to display to the user
+		// Currently makes an even number to display
+		// TODO: More complex space management algorithm
 		display_size = character_inventory_size;
 
 		if (character_inventory_size % 2 !== 0) {
 			display_size = character_inventory_size + 1;
 		}
-
 
 		// Do we display them vertically or horizontally
 		cols = display_size / 2;
@@ -99,6 +113,7 @@ function create_stage_wrapper(direction = 'horizontal') {
 		width = cols * GRID_CELL_SIZE;
 		height = rows * GRID_CELL_SIZE;
 
+		// We only create on stage and update it on redraws
 		if (!stage) {
 			stage = new Konva.Stage({
 				container: 'inventory',
@@ -124,13 +139,14 @@ function create_stage_wrapper(direction = 'horizontal') {
 }
 
 /**
- * Draws a grid of rows and columns to make cells of grid_cell_size
+ * Draws a grid of lines on a konva layer object
  *
- * @param {Number} rows                                             - Number of rows to have
- * @param {Number} cols                                             - Number of columns to have
- * @param {Number} grid_cell_size                                   - Size of one grid square
- * @param {Number} width                                            - Maximum width of the stage to draw on
- * @param {Number} height                                           - Maximum height of the stage to draw on
+ * @param {Number} rows           - Number of rows to have (usually passed in from obj from create_stage_wrapper)
+ * @param {Number} cols           - Number of columns to have (usually passed in from obj from create_stage_wrapper)
+ * @param {Number} grid_cell_size - Size of one grid square (usually passed in from obj from create_stage_wrapper)
+ * @param {Number} width          - Maximum width of the stage to draw on (makes sure lines are drawn across the entire stage)
+ * @param {Number} height         - Maximum height of the stage to draw on (makes sure lines are drawn across the entire stage)
+ * @return {Object}               - Object exposes the konva layer via obj.layer and the function used to draw the grid which can be recalled if needed via obj.draw()
  */
 function create_grid_layer(rows, cols, grid_cell_size, width, height) {
 	let grid_layer_wrapper = {};
@@ -178,8 +194,18 @@ function create_grid_layer(rows, cols, grid_cell_size, width, height) {
  * The wrapper provides functionality for managing free spaces
  * in the inventory.
  *
- * @param {Number} rows - Number of rows
- * @param {Number} cols - Number of columns
+ * @param {Number} rows - Number of rows (Usually passed in from a konva stage object and should be the same as fed to the grid layer)
+ * @param {Number} cols - Number of columns (Usually passed in from a konva stage object and should be the same as fed to the grid layer)
+ * @returns {Object} - Exposes the following:
+ * 			obj.layer                           - Konva layer object
+ * 			obj.create                          - Used to update the layer on a redraw
+ * 			obj.spaces                          - Internal representation of where items are stored in the grid
+ * 			obj.old_spaces                      - Internal representation of where items were stored in the grid before a redraw.
+ * 			obj.index_to_spaceid(index)         - Returns the "spaceid" of the cell at "index". For example 0                     - > "00"
+ * 			obj.spaceid_to_index(spaceid)       - Returns the index of the cell "spaceid". For example "00"                       - > 0
+ * 			obj.next_free_space()               - Returns the 'spaceid' of the next free  cell in the grid.
+ * 			obj.add_item_to(spaceid, item name) - Registers the item of "item name" at "spaceid"
+ * 			obj.remove_item_from(spaceid)       - Sets the value of the grid to false. Effectively "removing" any items.
  */
 function create_item_layer_wrapper(rows, cols) {
 
@@ -216,8 +242,8 @@ function create_item_layer_wrapper(rows, cols) {
 
 	/*
 	 * Converts a spaceid to equivalent index
-	  @param {String} space_id - space id of cell: row + "" + col
-	  @return {Integer} -1 if not found, otherwise the index of the cell.
+	 * @param {String} space_id - space id of cell: row + "" + col
+	 * @return {Integer} -1 if not found, otherwise the index of the cell.
 	 */
 	layer_wrapper.spaceid_to_index = function(space_id) {
 		const available_spaces = Object.getOwnPropertyNames(spaces).sort();
@@ -236,21 +262,6 @@ function create_item_layer_wrapper(rows, cols) {
 			return ""
 		}
 		return available_spaces[index];
-	}
-
-	/**
-	 * Check if a space is empty
-	 *
-	 * @param {String} spaceID - (col+""+row) space to check
-	 * @return {Boolean} True if it is empty, false if not.
-	 */
-	layer_wrapper.is_space_empty = function(spaceID) {
-		if (spaceID in spaces) {
-			if (!spaces[spaceID]) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
@@ -303,19 +314,27 @@ function create_item_layer_wrapper(rows, cols) {
 
 
 /**
- * Creates a new image object per item passed in from the backend.
- * Wraps a Konva image object to provide attributes meant to make
- * collision detection easier.
+ * Creates a new image object and registers it with item_layer via the add_item_to method.
+ *
+ * It also draws the item on the konva layer and links the konva representation and internal representation of the item via "item.name"
+ * Handles the drag and drop logic, as well as "snapping" items to the grid.
+ * Code for snapping items to the grid taken from: https://codepen.io/pierrebleroux/pen/gGpvxJ
  *
  * @param {String} name                   - Name of the item
- * @param {Number} col                    - Which column do we place the item in?
- * @param {Number} row                    - Which row do we place the item in?
- * @param {Number} width                  - How many "cells" does the item occupy on the X axis
- * @param {Number} height                 - How many "cells" does the item occupy on the Y axis
+ * @param {Number} col                    - Column of the grid to store the item
+ * @param {Number} row                    - Row of the grid to store the item
+ * @param {Number} width                  - How many "cells" the item occupies on the X axis
+ * @param {Number} height                 - How many "cells" the item occupies on the Y axis
  * @param {String} url                    - URL to the image for the item
  * @param {Number} grid_cell_size         - The size of one grid cell in pixels
- * @param {Item Layer Wrapper} item_layer - Object returned from @create_item_layer_wrapper
- * @param {Konva Stage Objet} stage       - Konva Stage object
+ * @param {Item Layer Wrapper} item_layer - The Konva layer to draw the item on (usually the layer returned from create_item_layer_wrapper)
+ * @param {Konva Stage Object} stage      - Konva Stage object that the item_layer will be added to (usually the stage from create_stage_wrapper)
+ * @returns {Object} - Object exposes the following for each item:
+ * 			obj.name         - name of the item
+ * 			obj.lastSpaceID  - the last cell in the grid that the item occupied
+ * 			obj.currentSpace - the current cell in the grid that the item occupies
+ * 			obj.width        - The width of the item (in grid cells)
+ * 			obj.height       - The height of the item (in grid cells)
  */
 function new_item(name, row, col, width, height, url, grid_cell_size, item_layer, stage) {
 
@@ -356,16 +375,6 @@ function new_item(name, row, col, width, height, url, grid_cell_size, item_layer
 				y: row * grid_cell_size
 			});
 
-			////If the user has moved it to another spot
-			////Update the last space and current space
-			////Otherwise the user has clicked the item and dropped it again, do nothing
-			//if (item.currentSpaceID !== (row + "" + col)) {
-			//item_layer.remove_item_from(item.lastSpaceID);
-			//item.lastSpaceID = item.currentSpaceID;
-			//item.currentSpaceID = row + "" + col;
-			//item_layer.add_item_to(item.currentSpaceID, name);
-			//}
-
 			stage.batchDraw();
 		});
 
@@ -377,7 +386,25 @@ function new_item(name, row, col, width, height, url, grid_cell_size, item_layer
 
 	return item;
 }
-function block_inventory_space(name, row, col, width, height, cell_size, layer_wrapper) {
+
+
+
+/**
+ * Creates an area in the grid that the user is prevented from using to store items
+ *
+ * @param {String} name          - Name of the blocked area. Defaults to "blocked". Probably best not to change this.
+ * @param {Number} row           - The row to block
+ * @param {Number} col           - The column to block
+ * @param {Number} width         - How many cells wide should it block
+ * @param {Number} height        - How many cells high should it block
+ * @param {Number} cell_size     - The size of one grid cell
+ * @param {Object} layer_wrapper - The object returned by item_layer_wrapper
+ * @returns {Object}                     - Object exposes the following for each item:
+ * 			obj.name         - name of the item
+ * 			obj.lastSpaceID  - the last cell in the grid that the item occupied
+ * 			obj.currentSpace - the current cell in the grid that the item occupies
+ */
+function block_inventory_space(name="blocked", row, col, width, height, cell_size, layer_wrapper) {
 	const wrapper = {}
 	wrapper.lastSpaceID = row + "" + col;
 	wrapper.currentSpaceID = row + "" + col;
@@ -401,13 +428,11 @@ function block_inventory_space(name, row, col, width, height, cell_size, layer_w
 }
 
 /**
- * Creates and links all elements of inventory. Also manages collision handling
- * between items. If a user tries to drop an item on another or a blocked space
- * it will be moved back to it's original place.
+ * Creates all constituent parts of the inventory and links them together.
  *
- * @param {String} direction - Display inventory vertically or horizontally
- * @param {Object} previous_item_locations - Previous item_layer_wrapper.spaces
- * @return {Object} - Object that gives access to the item_layer_wrapper.spaces
+ * @param {String} direction - Which direction are we drawing: horizontal or vertical
+ * @return {Object} Object that exposes:
+ * 		obj.redraw() - Used when we need to redraw the grid horizontally or vertically
  */
 function manage_inventory(direction) {
 	let inventory = {}
@@ -430,31 +455,33 @@ function manage_inventory(direction) {
 		grid.draw(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size, stage_wrapper.stage.width(), stage_wrapper.stage.height());
 		item_layer_wrapper.create(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size);
 
-		console.log("old", item_layer_wrapper.old_spaces);
-		console.log("new", item_layer_wrapper.spaces);
 		//Update the items on the new grid
 		Object.entries(item_layer_wrapper.old_spaces).sort().forEach((space, index) => {
+			//If the grid content was not false I.e it had a name
 			if (space[1]) {
 				let item_name = space[1];
 
+				// Work out the equivalent location on the new grid
 				let new_location = item_layer_wrapper.index_to_spaceid(index);
 
+				//Add it to the new grid
 				item_layer_wrapper.add_item_to(new_location, space[1]);
 
+				//Update the information in character_items
 				character_items[item_name].lastSpaceID = new_location;
 				character_items[item_name].currentSpaceID = new_location;
 
+				//Find the corresponding item on the konva layer
 				let layer_item = item_layer_wrapper.layer.findOne(node => node.name() === item_name.trim());
 
+				//Redraw it to the new position
 				layer_item.absolutePosition({
 					x: new_location[1] * stage_wrapper.grid_cell_size,
 					y: new_location[0] * stage_wrapper.grid_cell_size,
 				});
-
-
-
 			}
 		});
+		//Redraw the changed elements
 		item_layer_wrapper.layer.batchDraw();
 	}
 
@@ -467,7 +494,7 @@ function manage_inventory(direction) {
 	}
 
 	// Sort the items into those that have an assigned space
-	// and those that don't. "no" is the default value provided by
+	// and those that don't. "-1" is the default value provided by
 	// the Item django model (see MUD/models.py)
 	let placed_items = [];
 	let unplaced_items = [];
@@ -480,15 +507,7 @@ function manage_inventory(direction) {
 		}
 	});
 
-	/*
-		* Placing items goes as follows:
-		* 1. pass information into new_item method.
-		* 	This registers the image on the konva canvas and returns a wrapper object.
-		* 	It also updates the free spaces in the item_layer_wrapper
-		* 2. Add the item_wrapper object to character_items
-	*/
-
-	//Place placed items first, unplaced items can fill in the empty spaces
+	//Place items that have a location first
 	placed_items.forEach((item) => {
 		const item_position = item_layer_wrapper.index_to_spaceid(item.currentSpaceIndex);
 
@@ -497,6 +516,7 @@ function manage_inventory(direction) {
 		character_items[item.name] = current_item;
 	});
 
+	//Unplaced items (those that don't have a location in the db) can fill in the empty spaces
 	unplaced_items.forEach((item) => {
 		let next_space = item_layer_wrapper.next_empty_space();
 		if (next_space !== "none") {
@@ -544,17 +564,20 @@ function manage_inventory(direction) {
 
 
 
-	/*
-	* Collision detection
-	*/
-
-	// If a drag event finishes on the item layer check the user has not dropped an item on top of another or a blocked cell.
+	/**
+	 * Handle the dragend on the konva layer level. This is responsible for making sure that items are not stacked on one another or placed
+	 * in a blocked inventory space
+	 *
+	 */
 	item_layer_wrapper.layer.on('dragend', (e) => {
+
 		// The item that was moved in the character_items object.
 		let moved_item = character_items[e.target.name()];
 
+		// Workout where the new location will be in the grid
 		let new_possible_location = Math.round(e.target.attrs.y / stage_wrapper.grid_cell_size) + "" + Math.round(e.target.attrs.x / stage_wrapper.grid_cell_size);
-		// If there is only one item, any drag is safe so save it.
+
+		// If there is only one item, any drag is safe if the last and current locations are not the same, so save it.
 		if (item_layer_wrapper.layer.children.length === 1) {
 			if (moved_item.lastSpaceID !== new_possible_location) {
 				try {
@@ -568,33 +591,37 @@ function manage_inventory(direction) {
 				}
 			}
 		}
-		else {
-			// Loop through all other items
+		else { // We have more than one child on the layer
+
+			// Used to break out of a loop in the event of a collosion
 			let can_save = true;
+
+
 			item_layer_wrapper.layer.children.each(function(child) {
-				// If we are not comparing the moved item to itself
+				// If we are not comparing an item to itself
 				if (can_save && child.name() !== e.target.name()) {
-					// Check to see if the new moved item's current location is the same as another item
-
-
-
+					//If the user tries to move an item onto another item or a blocked space
 					if (new_possible_location === character_items[child.name()].currentSpaceID) {
-						// If so, move it back to its old location
+						// Move it back to its previous location
 						e.target.to({
 							x: moved_item.lastSpaceID[1] * stage_wrapper.grid_cell_size,
 							y: moved_item.lastSpaceID[0] * stage_wrapper.grid_cell_size,
 							duration: 0.5,
 						});
 
+						// Break out of the loop and prevent saving the update
 						can_save = false;
 					}
 				}
 			});
+
+			// If we can save the new move and the item has moved from its last position in the grid
 			if (can_save && moved_item.lastSpaceID !== new_possible_location) {
 				try {
-					// Save changes to inventory
+					//Save the changes
 					save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location));
 
+					//Update information in internal state
 					moved_item.currentSpaceID = new_possible_location;
 					item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
 					item_layer_wrapper.add_item_to(new_possible_location, moved_item.name);
@@ -615,7 +642,3 @@ function manage_inventory(direction) {
 
 	return inventory;
 }
-
-//TODO: Implement blocked inventory spaces
-//TODO: When items start to occupy more than one space, you will need to rework how you place items. For example if an item has a width of two it needs to adjacent spaces.
-//TODO: Provide functionality to filter items to display based on Type and Slot
