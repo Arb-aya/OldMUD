@@ -92,8 +92,8 @@ def update_item(request):
         new_item_data = json.load(request)["item_data"]
         item = Item.objects.get(name=new_item_data['name'])
         if(item):
-            item.currentSpaceID = new_item_data['currentSpaceID']
-            item.lastSpaceID = new_item_data['lastSpaceID']
+            item.currentSpaceIndex = new_item_data['currentSpaceIndex']
+            item.lastSpaceIndex = new_item_data['lastSpaceIndex']
             item.save()
             return HttpResponse(200)
         return HttpResponse(404)
