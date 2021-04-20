@@ -20,9 +20,13 @@ class Item(models.Model):
 
     slot = models.CharField(default=Slot.OFF_HAND, max_length=50)
 
-    lastSpaceID = models.CharField(default="no", max_length=2)
+    lastSpaceIndex = models.CharField(default="-1", max_length=2)
 
-    currentSpaceID = models.CharField(default="no", max_length=2)
+    currentSpaceIndex = models.CharField(default="-1", max_length=2)
+
+    width = models.IntegerField(default=1, validators=[MinValueValidator(1)])
+
+    height = models.IntegerField(default=1, validators=[MinValueValidator(1)])
 
     description = models.TextField()
 
@@ -100,4 +104,4 @@ class Character(models.Model):
     )
 
     def __str__(self):
-        return f"hp{self.hp} mp{self.mp} str{self.strength} agi{self.agility} dex{self.dexterity}"
+        return f"{self.owner.username}'s character"
