@@ -430,8 +430,8 @@ function manage_inventory(direction) {
 		grid.draw(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size, stage_wrapper.stage.width(), stage_wrapper.stage.height());
 		item_layer_wrapper.create(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size);
 
-		console.log("old",item_layer_wrapper.old_spaces);
-		console.log("new",item_layer_wrapper.spaces);
+		console.log("old", item_layer_wrapper.old_spaces);
+		console.log("new", item_layer_wrapper.spaces);
 		//Update the items on the new grid
 		Object.entries(item_layer_wrapper.old_spaces).sort().forEach((space, index) => {
 			if (space[1]) {
@@ -461,10 +461,10 @@ function manage_inventory(direction) {
 
 	//Block out any inventory space that was added as an extra
 	//Before placing any items
-	//if (character_inventory_size !== stage_wrapper.display_size) {
-	//const blocked = block_inventory_space("blocked", stage_wrapper.rows - 1, stage_wrapper.cols - 1, 1, 1, stage_wrapper.grid_cell_size, item_layer_wrapper);
-	//character_items[blocked.name] = blocked;
-	//}
+	if (character_inventory_size !== stage_wrapper.display_size) {
+		const blocked = block_inventory_space("blocked", stage_wrapper.rows - 1, stage_wrapper.cols - 1, 1, 1, stage_wrapper.grid_cell_size, item_layer_wrapper);
+		character_items[blocked.name] = blocked;
+	}
 
 	// Sort the items into those that have an assigned space
 	// and those that don't. "no" is the default value provided by
@@ -560,7 +560,7 @@ function manage_inventory(direction) {
 				try {
 					save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location));
 					item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
-					item_layer_wrapper.add_item_to(new_possible_location,moved_item.name);
+					item_layer_wrapper.add_item_to(new_possible_location, moved_item.name);
 					console.log("saved" + moved_item.currentSpaceID);
 				}
 				catch (e) {
