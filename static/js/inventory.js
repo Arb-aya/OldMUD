@@ -204,7 +204,7 @@ function create_item_layer_wrapper(rows, cols) {
 
 		for (let i = 0; i < rows; i++) {
 			for (let j = 0; j < cols; j++) {
-				spaces[String(i + "" + j)] = false;
+				spaces[i + "" + j] = false;
 			}
 		}
 
@@ -356,15 +356,15 @@ function new_item(name, row, col, width, height, url, grid_cell_size, item_layer
 				y: row * grid_cell_size
 			});
 
-			//If the user has moved it to another spot
-			//Update the last space and current space
-			//Otherwise the user has clicked the item and dropped it again, do nothing
-			if (item.currentSpaceID !== (row + "" + col)) {
-				item_layer.remove_item_from(item.lastSpaceID);
-				item.lastSpaceID = item.currentSpaceID;
-				item.currentSpaceID = row + "" + col;
-				item_layer.add_item_to(item.currentSpaceID, name);
-			}
+			////If the user has moved it to another spot
+			////Update the last space and current space
+			////Otherwise the user has clicked the item and dropped it again, do nothing
+			//if (item.currentSpaceID !== (row + "" + col)) {
+			//item_layer.remove_item_from(item.lastSpaceID);
+			//item.lastSpaceID = item.currentSpaceID;
+			//item.currentSpaceID = row + "" + col;
+			//item_layer.add_item_to(item.currentSpaceID, name);
+			//}
 
 			stage.batchDraw();
 		});
@@ -430,10 +430,13 @@ function manage_inventory(direction) {
 		grid.draw(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size, stage_wrapper.stage.width(), stage_wrapper.stage.height());
 		item_layer_wrapper.create(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size);
 
+		console.log("old",item_layer_wrapper.old_spaces);
+		console.log("new",item_layer_wrapper.spaces);
 		//Update the items on the new grid
 		Object.entries(item_layer_wrapper.old_spaces).sort().forEach((space, index) => {
 			if (space[1]) {
 				let item_name = space[1];
+
 				let new_location = item_layer_wrapper.index_to_spaceid(index);
 
 				item_layer_wrapper.add_item_to(new_location, space[1]);
@@ -496,7 +499,6 @@ function manage_inventory(direction) {
 
 	unplaced_items.forEach((item) => {
 		let next_space = item_layer_wrapper.next_empty_space();
-		console.log("next", next_space);
 		if (next_space !== "none") {
 			let current_item = new_item(item.name, next_space[0], next_space[1], item.width, item.height, media_url + item.image, stage_wrapper.grid_cell_size, item_layer_wrapper, stage_wrapper.stage);
 			character_items[item.name] = current_item;
@@ -551,11 +553,14 @@ function manage_inventory(direction) {
 		// The item that was moved in the character_items object.
 		let moved_item = character_items[e.target.name()];
 
+		let new_possible_location = Math.round(e.target.attrs.y / stage_wrapper.grid_cell_size) + "" + Math.round(e.target.attrs.x / stage_wrapper.grid_cell_size);
 		// If there is only one item, any drag is safe so save it.
 		if (item_layer_wrapper.layer.children.length === 1) {
-			if (moved_item.lastSpaceID !== moved_item.currentSpaceID) {
+			if (moved_item.lastSpaceID !== new_possible_location) {
 				try {
-					save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(moved_item.currentSpaceID))
+					save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location));
+					item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
+					item_layer_wrapper.add_item_to(new_possible_location,moved_item.name);
 					console.log("saved" + moved_item.currentSpaceID);
 				}
 				catch (e) {
@@ -568,31 +573,32 @@ function manage_inventory(direction) {
 			let can_save = true;
 			item_layer_wrapper.layer.children.each(function(child) {
 				// If we are not comparing the moved item to itself
-				if (can_save && child !== e.target) {
-					console.log(moved_item.currentSpaceID);
-					console.log(character_items);
+				if (can_save && child.name() !== e.target.name()) {
 					// Check to see if the new moved item's current location is the same as another item
-					if (moved_item.currentSpaceID === character_items[child.name()].currentSpaceID) {
+
+
+
+					if (new_possible_location === character_items[child.name()].currentSpaceID) {
 						// If so, move it back to its old location
 						e.target.to({
 							x: moved_item.lastSpaceID[1] * stage_wrapper.grid_cell_size,
 							y: moved_item.lastSpaceID[0] * stage_wrapper.grid_cell_size,
 							duration: 0.5,
 						});
-						// Update the current space ID. Important to do!
-						moved_item.currentSpaceID = moved_item.lastSpaceID;
 
-						console.log(item_layer_wrapper.spaces);
 						can_save = false;
 					}
 				}
 			});
-			if (can_save && moved_item.lastSpaceID !== moved_item.currentSpaceID) {
-				// Save changes to inventory
-				// Not sure if doing this after every move is a good idea. But it's the way I'm doing it for now.
+			if (can_save && moved_item.lastSpaceID !== new_possible_location) {
 				try {
+					// Save changes to inventory
+					save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location));
 
-					save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(moved_item.currentSpaceID))
+					moved_item.currentSpaceID = new_possible_location;
+					item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
+					item_layer_wrapper.add_item_to(new_possible_location, moved_item.name);
+
 					console.log("saved");
 				}
 				catch (e) {
