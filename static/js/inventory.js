@@ -80,7 +80,7 @@ function create_stage_wrapper(direction = 'horizontal') {
 	let stage_wrapper = {};
 
 	//Change this as needed.
-	const GRID_CELL_SIZE = 100;
+	const GRID_CELL_SIZE = 75;
 
 	let rows, cols;
 	let width, height;
@@ -371,7 +371,11 @@ function new_item(name, row, col, width, height, url, item_layer, stage_wrapper)
 			let col = Math.round(image.x() / stage_wrapper.grid_cell_size);
 			let row = Math.round(image.y() / stage_wrapper.grid_cell_size);
 
-			if (col < 0 || row < 0 || col >= stage_wrapper.cols || row >= stage_wrapper.rows) {
+			if (row < 0) {
+				//TODO: link the two stages up
+			}
+
+			if (col < 0 || col >= stage_wrapper.cols || row >= stage_wrapper.rows) {
 				image.position({
 					x: item.lastSpaceID[1] * stage_wrapper.grid_cell_size,
 					y: item.lastSpaceID[0] * stage_wrapper.grid_cell_size,
@@ -436,6 +440,106 @@ function block_inventory_space(name = "blocked", row, col, width, height, cell_s
 	return wrapper;
 }
 
+
+function create_character_stage() {
+
+	let stage_wrapper = {};
+
+	const width = 300;
+	const height = 300;
+
+	const slot_width = 50;
+	const slot_height = 50;
+
+	let stage;
+
+	// We only create on stage and update it on redraws
+	if (!stage) {
+		stage = new Konva.Stage({
+			container: 'character',
+			width: width,
+			height: height
+		});
+	}
+	else {
+		stage.width(width);
+		stage.height(height);
+	}
+
+	let character_layer = new Konva.Layer();
+
+	var head_rect = new Konva.Rect({
+		x: (width / 2) - (slot_width / 2),
+		y: slot_height / 3,
+		width: slot_width,
+		height: slot_height,
+		fill: 'white',
+		opacity: 0.3,
+		stroke: 'white',
+		strokeWidth: 2,
+		name: 'head_slot',
+	});
+
+	var main_hand_rect = new Konva.Rect({
+		x: 0,
+		y: (height / 2) - slot_height,
+		width: slot_width,
+		height: slot_height,
+		fill: 'white',
+		opacity: 0.3,
+		stroke: 'white',
+		strokeWidth: 2,
+		name: 'main_hand_slot',
+	});
+
+	var off_hand_rect = new Konva.Rect({
+		x: width - slot_width,
+		y: (height / 2) - slot_height,
+		width: slot_width,
+		height: slot_height,
+		fill: 'white',
+		opacity: 0.3,
+		stroke: 'white',
+		strokeWidth: 2,
+		name: 'off_hand_slot',
+	});
+
+	var body_rect = new Konva.Rect({
+		x: (width / 2) - (slot_width / 2),
+		y: (height / 2) - slot_height,
+		width: slot_width,
+		height: slot_height * 2,
+		fill: 'white',
+		opacity: 0.3,
+		stroke: 'white',
+		strokeWidth: 2,
+		name: 'body_slot',
+	});
+
+	Konva.Image.fromURL(media_url + 'stick.png', function(stickman) {
+		stickman.setAttrs({
+			x: 0,
+			y: 0,
+			opacity: 1,
+		});
+		//character_layer.add(stickman);
+		stickman.zIndex(0);
+		character_layer.batchDraw();
+	});
+
+
+	character_layer.add(head_rect);
+	character_layer.add(body_rect);
+	character_layer.add(main_hand_rect);
+	character_layer.add(off_hand_rect);
+
+	stage.add(character_layer);
+
+	stage_wrapper.stage = stage;
+
+	return stage_wrapper;
+}
+
 /**
  * Creates all constituent parts of the inventory and links them together.
  *
@@ -449,10 +553,14 @@ function manage_inventory(direction) {
 	let stage_wrapper = create_stage_wrapper(direction);
 	let grid = create_grid_layer(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size, stage_wrapper.stage.width(), stage_wrapper.stage.height());
 	let item_layer_wrapper = create_item_layer_wrapper(stage_wrapper.rows, stage_wrapper.cols);
+	let character_layer = create_character_stage();
 
 	// Used to store item wrapper classes. These are used in collision detection.
 	let character_items = {};
 
+
+	inventory.stage_wrapper = stage_wrapper;
+	inventory.item_layer_wrapper = item_layer_wrapper;
 
 	/**
 	 * Called when we want to redraw the grid
@@ -612,7 +720,6 @@ function manage_inventory(direction) {
 			// Used to break out of a loop in the event of a collosion
 			let can_save = true;
 
-
 			item_layer_wrapper.layer.children.each(function(child) {
 				// If we are not comparing an item to itself
 				if (can_save && child.name() !== e.target.name()) {
@@ -662,3 +769,4 @@ function manage_inventory(direction) {
 
 	return inventory;
 }
+
