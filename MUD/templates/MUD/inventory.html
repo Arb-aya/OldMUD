@@ -25,10 +25,17 @@
 	{{ MEDIA_URL|json_script:"media_url" }}
   </div>
 
-  <div class="col-12">
+  <div class="col-12 d-flex justify-content-center">
+	  <!-- Used by inventory.js to detect which viewport size we are on -->
 	  <div id="breakpoint-detect" class="d-md-none">
 	  </div>
 
+	  <div id="character">
+	  </div>
+
+  </div>
+
+  <div class="col-12 d-flex justify-content-center">
 	  <div id="inventory">
 	  </div>
   </div>
