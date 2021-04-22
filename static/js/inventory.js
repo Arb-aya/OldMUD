@@ -349,6 +349,19 @@ function new_item(name, row, col, width, height, url, item_layer, stage_wrapper)
 	item.height = height * stage_wrapper.grid_cell_size;
 	item.name = name;
 
+	let drag_row;
+	let old_drag_row;
+
+	//Used to check if user has moved up or down
+	const set_row = (row) => {
+		old_drag_row = drag_row;
+		drag_row = row;
+	};
+
+	const get_rows = () => {
+		return [drag_row, old_drag_row];
+	};
+
 
 	Konva.Image.fromURL(url, function(image) {
 		image.setAttrs({
@@ -367,21 +380,37 @@ function new_item(name, row, col, width, height, url, item_layer, stage_wrapper)
 			image.moveToTop();
 		});
 
+		//Used to trigger a equip or unequip event.
+		image.on('dragmove', (e) => {
+			let row = Math.round(image.y() / stage_wrapper.grid_cell_size);
+
+			set_row(row);
+			let rows = get_rows();
+
+			//If the user has moved up off the stage for the first time, they might want to equip items
+			if (rows[0] < 0 && rows[1] >= 0) {
+				image.fire('equip', {}, true);
+			}
+
+			//If the user has moved back down onto the stage, don't equip the items
+			if (rows[0] >= 0 && rows[1] < 0) {
+				image.fire('unequip', {}, true);
+			}
+
+		});
+
 		image.on('dragend', (e) => {
 			let col = Math.round(image.x() / stage_wrapper.grid_cell_size);
 			let row = Math.round(image.y() / stage_wrapper.grid_cell_size);
 
-			if (row < 0) {
-				//TODO: link the two stages up
-			}
-
-			if (col < 0 || col >= stage_wrapper.cols || row >= stage_wrapper.rows) {
+			//If the image was moved out of the bounds of the stage, move it back
+			if (col < 0 || col >= stage_wrapper.cols || row >= stage_wrapper.rows || row < 0) {
 				image.position({
 					x: item.lastSpaceID[1] * stage_wrapper.grid_cell_size,
 					y: item.lastSpaceID[0] * stage_wrapper.grid_cell_size,
 				})
 			}
-			else {
+			else { //Otherwise update the location
 				image.position({
 					x: col * stage_wrapper.grid_cell_size,
 					y: row * stage_wrapper.grid_cell_size
@@ -466,8 +495,24 @@ function create_character_stage() {
 		stage.height(height);
 	}
 
+	//Draws the character and item slots. This is static.
 	let character_layer = new Konva.Layer();
 
+	//Draws equipped items. This can change and needs to be redrawn.
+	//So we need a separate layer.
+	let item_layer = new Konva.Layer();
+
+
+	//The group on the item_layer that is positioned above the
+	//Head rect on the character layer. This is the node the item
+	//is added to
+	var head_slot = new Konva.Group({
+		name: 'head_slot',
+		x: (width / 2) - (slot_width / 2),
+		y: slot_height / 3,
+	});
+
+	//The rectange drawn to show the head slot
 	var head_rect = new Konva.Rect({
 		x: (width / 2) - (slot_width / 2),
 		y: slot_height / 3,
@@ -477,7 +522,18 @@ function create_character_stage() {
 		opacity: 0.3,
 		stroke: 'white',
 		strokeWidth: 2,
-		name: 'head_slot',
+	});
+
+	//If a mouseup event occurs on the head slot, fire the equip head event
+	head_rect.on("mouseup", function(e) {
+		head_slot.fire('equip_head', {}, true);
+	});
+
+
+	var main_hand_slot = new Konva.Group({
+		name: 'main_hand_slot',
+		x: 0,
+		y: (height / 2) - slot_height,
 	});
 
 	var main_hand_rect = new Konva.Rect({
@@ -492,6 +548,16 @@ function create_character_stage() {
 		name: 'main_hand_slot',
 	});
 
+	main_hand_rect.on("mouseup", function(e) {
+		main_hand_slot.fire('equip_main_hand', {}, true);
+	});
+
+	var off_hand_slot = new Konva.Group({
+		name: 'main_hand_slot',
+		x: width - slot_width,
+		y: (height / 2) - slot_height,
+	});
+
 	var off_hand_rect = new Konva.Rect({
 		x: width - slot_width,
 		y: (height / 2) - slot_height,
@@ -504,11 +570,22 @@ function create_character_stage() {
 		name: 'off_hand_slot',
 	});
 
+	off_hand_rect.on("mouseup", function(e) {
+		off_hand_slot.fire('equip_off_hand', {}, true);
+	});
+
+
+	var body_slot = new Konva.Group({
+		name: 'main_hand_slot',
+		x: (width / 2) - (slot_width / 2),
+		y: (height / 2) - slot_height,
+	});
+
 	var body_rect = new Konva.Rect({
 		x: (width / 2) - (slot_width / 2),
 		y: (height / 2) - slot_height,
 		width: slot_width,
-		height: slot_height * 2,
+		height: slot_height,
 		fill: 'white',
 		opacity: 0.3,
 		stroke: 'white',
@@ -516,26 +593,54 @@ function create_character_stage() {
 		name: 'body_slot',
 	});
 
+	body_rect.on("mouseup", function(e) {
+		body_slot.fire('equip_body', {}, true);
+	});
+
+	//Stick man
 	Konva.Image.fromURL(media_url + 'stick.png', function(stickman) {
 		stickman.setAttrs({
 			x: 0,
 			y: 0,
 			opacity: 1,
 		});
-		//character_layer.add(stickman);
-		stickman.zIndex(0);
+		character_layer.add(stickman);
 		character_layer.batchDraw();
+		stickman.zIndex(0);
 	});
 
-
 	character_layer.add(head_rect);
-	character_layer.add(body_rect);
-	character_layer.add(main_hand_rect);
-	character_layer.add(off_hand_rect);
+	item_layer.add(head_slot);
 
-	stage.add(character_layer);
+	character_layer.add(body_rect);
+	item_layer.add(body_slot);
+
+	character_layer.add(main_hand_rect);
+	item_layer.add(main_hand_slot);
+
+	character_layer.add(off_hand_rect);
+	item_layer.add(off_hand_slot);
+
+	character_layer.batchDraw();
+
+	stage.add(character_layer, item_layer);
 
 	stage_wrapper.stage = stage;
+	stage_wrapper.item_layer = item_layer;
+
+	stage_wrapper.equip_item = function(slot, item) {
+		item.moveTo(slot);
+
+		//Resize it to the same size as the slot rectangles
+		item.width(slot_width);
+		item.height(slot_height);
+
+		//Position it in the top left of the group
+		item.x(0);
+		item.y(0);
+
+		stage.batchDraw();
+	}
 
 	return stage_wrapper;
 }
@@ -554,6 +659,52 @@ function manage_inventory(direction) {
 	let grid = create_grid_layer(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size, stage_wrapper.stage.width(), stage_wrapper.stage.height());
 	let item_layer_wrapper = create_item_layer_wrapper(stage_wrapper.rows, stage_wrapper.cols);
 	let character_layer = create_character_stage();
+
+	let equip_item = null;
+
+	//Make a note that the user might want to equip this item
+	item_layer_wrapper.layer.on('equip', function(e) {
+		if (e.target) {
+			equip_item = e.target;
+		}
+	});
+
+	item_layer_wrapper.layer.on('unequip', function(e) {
+		equip_item = null;
+	});
+
+	//Check to see if the user has tried to equip something to the head.
+	//If so move the item to the other stage.
+	character_layer.stage.on('equip_head', function(e) {
+		if (equip_item) {
+			character_layer.equip_item(e.target, equip_item);
+		}
+	});
+
+	character_layer.stage.on('equip_body', function(e) {
+		if (equip_item) {
+			character_layer.equip_item(e.target, equip_item);
+		}
+	});
+
+	character_layer.stage.on('equip_main_hand', function(e) {
+		if (equip_item) {
+			character_layer.equip_item(e.target, equip_item);
+		}
+	});
+
+	character_layer.stage.on('equip_off_hand', function(e) {
+		if (equip_item) {
+			character_layer.equip_item(e.target, equip_item);
+		}
+	});
+
+	//If the user finishes the drag on the stage and not in a rectangle, don't equip it
+	character_layer.stage.on('mouseup', function(e) {
+		if (equip_item) {
+			equip_item = null;
+		}
+	});
 
 	// Used to store item wrapper classes. These are used in collision detection.
 	let character_items = {};
