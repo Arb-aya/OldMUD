@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth import get_user_model
 
-from .models_enums import ItemType, Slot
+from .models_enums import Slot, ItemType
 from . import defaultValues
 
 
@@ -16,13 +16,9 @@ class Item(models.Model):
         upload_to="items", max_length=1204, null=True, blank=True
     )
 
-    type = models.CharField(default=ItemType.SHIELD, max_length=50)
+    item_type = models.CharField(default=ItemType.SHIELD, max_length=50)
 
     slot = models.CharField(default=Slot.OFF_HAND, max_length=50)
-
-    lastSpaceIndex = models.CharField(default="-1", max_length=2)
-
-    currentSpaceIndex = models.CharField(default="-1", max_length=2)
 
     width = models.IntegerField(default=1, validators=[MinValueValidator(1)])
 
@@ -35,11 +31,27 @@ class Item(models.Model):
     def __str__(self):
         return f"{self.id} - {self.name} "
 
+class ItemSettings(models.Model):
+
+    character = models.ForeignKey('Character', on_delete=models.CASCADE, related_name='items', related_query_name="items")
+
+    item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='settings', related_query_name="settings")
+
+    lastSpaceIndex = models.CharField(default="-1", max_length=2)
+
+    currentSpaceIndex = models.CharField(default="-1", max_length=2)
+
+    equipped = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f" {self.character.owner.username} - {self.item.name} - {self.equipped}"
+
+
 
 class Character(models.Model):
     """ Represents each chatter's character """
 
-    owner = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    owner = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="owner")
 
     inventory_size = models.IntegerField(
         validators=[
@@ -48,9 +60,6 @@ class Character(models.Model):
         ],
         default=defaultValues.DEFAULT_INVENTORY_SIZE,
     )
-
-    # Might want items to be bound to the owner rather than a character?
-    items = models.ManyToManyField(Item)
 
     points = models.IntegerField(
         validators=[

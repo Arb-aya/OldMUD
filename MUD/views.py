@@ -1,8 +1,9 @@
+from django.core.serializers import serialize
 from django.shortcuts import render, reverse, redirect, HttpResponse
 from django.contrib.auth.decorators import login_required
 import json
 
-from .models import Character, Item
+from .models import Character, Item, ItemSettings
 from .forms import EditCharacterForm, DisplayCharacterForm
 from .helpers import validate_character_form, get_character
 
@@ -72,12 +73,23 @@ def manage_inventory(request):
     if not character:
         return redirect(reverse("view_character"))
 
-    items = character.items.all()
+    character_items = list(character.items.all().order_by('item_id'))
 
-    context = {
-        "inventory_size": character.inventory_size,
-        "items": list(items.values()),
-    }
+    item_ids = [ItemSettings.item_id for ItemSettings in character_items]
+
+    item_data = list(
+        Item.objects.filter(pk__in=item_ids).order_by('id').values(
+            "name", "image", "item_type", "slot", "width", "height"
+        )
+    )
+
+    for index, item in enumerate(item_data):
+        item['lastSpaceIndex'] = character_items[index].lastSpaceIndex
+        item['currentSpaceIndex'] = character_items[index].currentSpaceIndex
+        item['equipped'] = character_items[index].equipped
+
+
+    context = {"inventory_size": character.inventory_size, "items": item_data}
 
     return render(request, "MUD/inventory.html", context)
 
@@ -88,14 +100,19 @@ def update_item(request):
     Updates an items position. Returns 200 or 404
 
     """
+    character = get_character(request.user.username)
+    if not character:
+        return redirect(reverse("view_character"))
+
     if request.method == "POST":
         new_item_data = json.load(request)["item_data"]
-        item = Item.objects.get(name=new_item_data['name'])
-        if(item):
-            item.currentSpaceIndex = new_item_data['currentSpaceIndex']
-            item.lastSpaceIndex = new_item_data['lastSpaceIndex']
-            item.save()
+        itemsettings = ItemSettings.objects.get(item__name=new_item_data["name"], character_id = character.id)
+        if itemsettings:
+            itemsettings.currentSpaceIndex = new_item_data["currentSpaceIndex"]
+            itemsettings.lastSpaceIndex = new_item_data["lastSpaceIndex"]
+            itemsettings.save()
             return HttpResponse(200)
+
         return HttpResponse(404)
     else:
         return redirect(reverse("manage_inventory"))
