@@ -2,11 +2,23 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth import get_user_model
 
-from .models_enums import Slot, ItemType
 from . import defaultValues
 
 
 class Item(models.Model):
+
+    class Slot(models.TextChoices):
+        HEAD = "head"
+        BODY = "body"
+        MAIN_HAND = "main_hand"
+        OFF_HAND = "off_hand"
+        BOTH_HANDS = "both_hands"
+
+
+    class ItemType(models.TextChoices):
+        WEAPON = "weapon"
+        ARMOUR = "armour"
+        SHIELD = "shield"
 
     name = models.CharField(max_length=254)
 
@@ -16,9 +28,9 @@ class Item(models.Model):
         upload_to="items", max_length=1204, null=True, blank=True
     )
 
-    item_type = models.CharField(default=ItemType.SHIELD, max_length=50)
+    item_type = models.CharField(default=ItemType.SHIELD,choices=ItemType.choices, max_length=50)
 
-    slot = models.CharField(default=Slot.OFF_HAND, max_length=50)
+    slot = models.CharField(default=Slot.OFF_HAND, choices=Slot.choices , max_length=50)
 
     width = models.IntegerField(default=1, validators=[MinValueValidator(1)])
 
