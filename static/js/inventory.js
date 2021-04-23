@@ -300,7 +300,9 @@ function create_item_layer_wrapper(rows, cols) {
 		// Filter out any spaces that are "false" as they are not free
 		// Sort the array.
 		// The next free space will be the first element of this array
-		const free_spaces = Object.getOwnPropertyNames(spaces).sort().filter((id) => !spaces[id]);
+		const free_spaces = Object.getOwnPropertyNames(spaces).sort().filter((id) => {
+			return !spaces[id];
+		});
 
 		if (free_spaces.length > 0) {
 			return free_spaces[0];
@@ -457,7 +459,6 @@ function new_item(item, current_item_position, last_item_position, item_layer, e
 
 		} else {
 			item_layer.layer.add(image);
-			item_layer.add_item_to(current_item_position,item.name);
 			item_layer.layer.batchDraw();
 		}
 	});
@@ -616,7 +617,7 @@ function create_character_stage() {
 
 
 	var body = new Konva.Group({
-		name: 'body_slot',
+		name: 'body',
 		x: (width / 2) - (slot_width / 2),
 		y: (height / 2) - slot_height,
 	});
@@ -756,13 +757,12 @@ function manage_inventory(direction) {
 
 				item_layer_wrapper.layer.batchDraw();
 			}
-			else {
-				e.target.position({
-					x: 0,
-					y: 0,
-				})
-
-			}
+		}
+		else {
+			e.target.position({
+				x: 0,
+				y: 0,
+			})
 
 		}
 	});
@@ -891,6 +891,7 @@ function manage_inventory(direction) {
 		const last_item_position = item_layer_wrapper.index_to_spaceid(item.lastSpaceIndex);
 
 		let current_item = new_item(item, current_item_position, last_item_position, item_layer_wrapper, character_layer, stage_wrapper);
+		item_layer_wrapper.add_item_to(current_item_position, item.name);
 		character_items[item.name] = current_item;
 	});
 
@@ -899,6 +900,7 @@ function manage_inventory(direction) {
 		let next_space = item_layer_wrapper.next_empty_space();
 		if (next_space !== "none") {
 			let current_item = new_item(item, next_space, next_space, item_layer_wrapper, character_layer, stage_wrapper);
+			item_layer_wrapper.add_item_to(next_space, item.name);
 			character_items[item.name] = current_item;
 
 			if (update_item_position(item.name, item_layer_wrapper.spaceid_to_index(next_space), item_layer_wrapper.spaceid_to_index(next_space))) {
