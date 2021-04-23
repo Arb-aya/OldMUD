@@ -1,9 +1,14 @@
 /**
+ *
  * This file is responsible for displaying the inventory to the user
  * as well as managing user interactions with the inventory.
  *
  * It provides the functionality to prevent the user from using selected
  * cells in the grid.
+ *
+ * Manages equipped items and lets the user equip items too.
+ *
+ * Beware all ye who enter; do so at your own peril.
  */
 
 //Contains character item data loaded in from backend
@@ -60,7 +65,6 @@ function is_small_breakpoint() {
 	let element = document.getElementById('breakpoint-detect');
 	return window.getComputedStyle(element).display === 'block';
 }
-
 
 
 /**
@@ -336,18 +340,23 @@ function create_item_layer_wrapper(rows, cols) {
  * 			obj.width        - The width of the item (in grid cells)
  * 			obj.height       - The height of the item (in grid cells)
  */
-function new_item(name, row, col, width, height, url, item_layer, stage_wrapper) {
+function new_item(item, current_item_position, last_item_position, item_layer, equipped_layer, stage_wrapper) {
 
 	// Object returned from this method
-	let item = {};
+	let item_wrapper = {};
 
 	// Space IDs are IDs that describe one cell in the grid. For example, 00 is the first cell (top left).
 	// We keep track of the last space occupied by an item as well as the current one.
-	item.lastSpaceID = row + "" + col;
-	item.currentSpaceID = row + "" + col;
-	item.width = width * stage_wrapper.grid_cell_size;
-	item.height = height * stage_wrapper.grid_cell_size;
-	item.name = name;
+	item_wrapper.lastSpaceID = last_item_position;
+	item_wrapper.currentSpaceID = current_item_position;
+
+	item_wrapper.width = item.width;
+	item_wrapper.height = item.height;
+
+	item_wrapper.name = item.name;
+	item_wrapper.slot = item.slot;
+	item_wrapper.item_type = item.item_type;
+	item_wrapper.equipped = item.equipped;
 
 	let drag_row;
 	let old_drag_row;
@@ -363,14 +372,15 @@ function new_item(name, row, col, width, height, url, item_layer, stage_wrapper)
 	};
 
 
+	const url = media_url + item.image;
 	Konva.Image.fromURL(url, function(image) {
 		image.setAttrs({
-			x: col * stage_wrapper.grid_cell_size,
-			y: row * stage_wrapper.grid_cell_size,
-			width: width * stage_wrapper.grid_cell_size,
-			height: height * stage_wrapper.grid_cell_size,
+			x: current_item_position[1] * stage_wrapper.grid_cell_size,
+			y: current_item_position[0] * stage_wrapper.grid_cell_size,
+			width: item_wrapper.width * stage_wrapper.grid_cell_size,
+			height: item_wrapper.height * stage_wrapper.grid_cell_size,
 			draggable: true,
-			name: name,
+			name: item.name,
 		});//setAttrs
 
 		//*
@@ -382,51 +392,81 @@ function new_item(name, row, col, width, height, url, item_layer, stage_wrapper)
 
 		//Used to trigger a equip or unequip event.
 		image.on('dragmove', (e) => {
-			let row = Math.round(image.y() / stage_wrapper.grid_cell_size);
+			//If the item isn't currently equipped
+			if (!item_wrapper.equipped) {
+				let row = Math.round(image.y() / stage_wrapper.grid_cell_size);
 
-			set_row(row);
-			let rows = get_rows();
+				set_row(row);
+				let rows = get_rows();
+				//If the user has moved up off the stage for the first time, they might want to equip items
+				if (rows[0] < 0 && rows[1] >= 0) {
+					image.fire('equip', {}, true);
+				}
 
-			//If the user has moved up off the stage for the first time, they might want to equip items
-			if (rows[0] < 0 && rows[1] >= 0) {
-				image.fire('equip', {}, true);
+				//If the user has moved back down onto the stage, don't equip the items
+				if (rows[0] >= 0 && rows[1] < 0) {
+					image.fire('deselect', {}, true);
+				}
 			}
-
-			//If the user has moved back down onto the stage, don't equip the items
-			if (rows[0] >= 0 && rows[1] < 0) {
-				image.fire('unequip', {}, true);
-			}
-
 		});
 
 		image.on('dragend', (e) => {
-			let col = Math.round(image.x() / stage_wrapper.grid_cell_size);
-			let row = Math.round(image.y() / stage_wrapper.grid_cell_size);
+			//If the item isn't equipped, the move is starting in the inventory
+			if (!item_wrapper.equipped) {
+				let col = Math.round(image.x() / stage_wrapper.grid_cell_size);
+				let row = Math.round(image.y() / stage_wrapper.grid_cell_size);
 
-			//If the image was moved out of the bounds of the stage, move it back
-			if (col < 0 || col >= stage_wrapper.cols || row >= stage_wrapper.rows || row < 0) {
-				image.position({
-					x: item.lastSpaceID[1] * stage_wrapper.grid_cell_size,
-					y: item.lastSpaceID[0] * stage_wrapper.grid_cell_size,
-				})
+				//If the image was moved out of the bounds of the stage, move it back
+				if (col < 0 || col >= stage_wrapper.cols || row >= stage_wrapper.rows || row < 0) {
+					image.position({
+						x: current_item_position[1] * stage_wrapper.grid_cell_size,
+						y: current_item_position[0] * stage_wrapper.grid_cell_size,
+					});
+				}
+				else { //Otherwise update the location
+					image.position({
+						x: col * stage_wrapper.grid_cell_size,
+						y: row * stage_wrapper.grid_cell_size
+					});
+				}
+
+				item_layer.layer.batchDraw();
 			}
-			else { //Otherwise update the location
-				image.position({
-					x: col * stage_wrapper.grid_cell_size,
-					y: row * stage_wrapper.grid_cell_size
-				});
+			// Item is equipped
+			else {
+				if (image.absolutePosition().y > equipped_layer.item_layer.height()) {
+					image.fire('unequip', {}, true);
+				}
+				else {
+					//TODO
+					//if the item that the drag ends over can be swapped, swap them
+					image.position({
+						x: 0,
+						y: 0,
+					});
+				}
+
 			}
 
-			stage_wrapper.stage.batchDraw();
+			equipped_layer.item_layer.batchDraw();
 		});
 
-		item_layer.layer.add(image);
-		item_layer.layer.batchDraw();
+		//If the item is equipped dictates which layer we add it to
+		if (item.equipped) {
+			equipped_layer.load_item(item.slot, image);
+
+		} else {
+			item_layer.layer.add(image);
+			item_layer.add_item_to(current_item_position,item.name);
+			item_layer.layer.batchDraw();
+		}
 	});
 
-	item_layer.add_item_to(item.currentSpaceID, name);
+	if (!item.equipped) {
+		item_layer.add_item_to(item.currentSpaceID, item.name);
+	}
 
-	return item;
+	return item_wrapper;
 }
 
 
@@ -506,8 +546,8 @@ function create_character_stage() {
 	//The group on the item_layer that is positioned above the
 	//Head rect on the character layer. This is the node the item
 	//is added to
-	var head_slot = new Konva.Group({
-		name: 'head_slot',
+	var head = new Konva.Group({
+		name: 'head',
 		x: (width / 2) - (slot_width / 2),
 		y: slot_height / 3,
 	});
@@ -526,12 +566,12 @@ function create_character_stage() {
 
 	//If a mouseup event occurs on the head slot, fire the equip head event
 	head_rect.on("mouseup", function(e) {
-		head_slot.fire('equip_head', {}, true);
+		head.fire('equip_head', {}, true);
 	});
 
 
-	var main_hand_slot = new Konva.Group({
-		name: 'main_hand_slot',
+	var main_hand = new Konva.Group({
+		name: 'main_hand',
 		x: 0,
 		y: (height / 2) - slot_height,
 	});
@@ -549,11 +589,11 @@ function create_character_stage() {
 	});
 
 	main_hand_rect.on("mouseup", function(e) {
-		main_hand_slot.fire('equip_main_hand', {}, true);
+		main_hand.fire('equip_main_hand', {}, true);
 	});
 
-	var off_hand_slot = new Konva.Group({
-		name: 'main_hand_slot',
+	var off_hand = new Konva.Group({
+		name: 'off_hand',
 		x: width - slot_width,
 		y: (height / 2) - slot_height,
 	});
@@ -571,12 +611,12 @@ function create_character_stage() {
 	});
 
 	off_hand_rect.on("mouseup", function(e) {
-		off_hand_slot.fire('equip_off_hand', {}, true);
+		off_hand.fire('equip_off_hand', {}, true);
 	});
 
 
-	var body_slot = new Konva.Group({
-		name: 'main_hand_slot',
+	var body = new Konva.Group({
+		name: 'body_slot',
 		x: (width / 2) - (slot_width / 2),
 		y: (height / 2) - slot_height,
 	});
@@ -594,7 +634,7 @@ function create_character_stage() {
 	});
 
 	body_rect.on("mouseup", function(e) {
-		body_slot.fire('equip_body', {}, true);
+		body.fire('equip_body', {}, true);
 	});
 
 	//Stick man
@@ -610,16 +650,16 @@ function create_character_stage() {
 	});
 
 	character_layer.add(head_rect);
-	item_layer.add(head_slot);
+	item_layer.add(head);
 
 	character_layer.add(body_rect);
-	item_layer.add(body_slot);
+	item_layer.add(body);
 
 	character_layer.add(main_hand_rect);
-	item_layer.add(main_hand_slot);
+	item_layer.add(main_hand);
 
 	character_layer.add(off_hand_rect);
-	item_layer.add(off_hand_slot);
+	item_layer.add(off_hand);
 
 	character_layer.batchDraw();
 
@@ -628,8 +668,24 @@ function create_character_stage() {
 	stage_wrapper.stage = stage;
 	stage_wrapper.item_layer = item_layer;
 
-	stage_wrapper.equip_item = function(slot, item) {
+	stage_wrapper.transfer_item = function(slot, item) {
+
 		item.moveTo(slot);
+
+		//Resize it to the same size as the slot rectangles
+		item.width(slot_width);
+		item.height(slot_height);
+
+		//Position it in the top left of the group
+		item.x(0);
+		item.y(0);
+
+		stage.batchDraw();
+	}
+
+	stage_wrapper.load_item = function(slot, item) {
+		let slot_group = item_layer.findOne(node => node.name() === slot);
+		slot_group.add(item);
 
 		//Resize it to the same size as the slot rectangles
 		item.width(slot_width);
@@ -669,34 +725,85 @@ function manage_inventory(direction) {
 		}
 	});
 
-	item_layer_wrapper.layer.on('unequip', function(e) {
+	item_layer_wrapper.layer.on('deselect', function(e) {
 		equip_item = null;
 	});
 
+
+	character_layer.item_layer.on('unequip', function(e) {
+		const new_location = item_layer_wrapper.next_empty_space();
+		const new_location_index = item_layer_wrapper.spaceid_to_index(new_location);
+
+		if (new_location !== "none") {
+			const item_name = e.target.name();
+			if (update_equipped_location(item_name, false, new_location_index, new_location_index)) {
+				const character_item = character_items[item_name];
+				e.target.moveTo(item_layer_wrapper.layer);
+
+				character_item.lastSpaceID = new_location;
+				character_item.currentSpaceID = new_location;
+				character_item.equipped = false;
+
+				e.target.width(character_item.width * stage_wrapper.grid_cell_size);
+				e.target.height(character_item.height * stage_wrapper.grid_cell_size);
+
+				item_layer_wrapper.add_item_to(new_location, item_name);
+
+				e.target.position({
+					x: new_location[1] * stage_wrapper.grid_cell_size,
+					y: new_location[0] * stage_wrapper.grid_cell_size,
+				});
+
+				item_layer_wrapper.layer.batchDraw();
+			}
+			else {
+				e.target.position({
+					x: 0,
+					y: 0,
+				})
+
+			}
+
+		}
+	});
+
+	function equip(slot) {
+		const character_item = character_items[equip_item?.name()];
+		if (character_item?.slot === slot.name()) {
+			try {
+				if (update_equipped_status(equip_item.name(), true)) {
+					character_item.equipped = true;
+					item_layer_wrapper.remove_item_from(character_item.lastSpaceID);
+					item_layer_wrapper.remove_item_from(character_item.currentSpaceID);
+					character_layer.transfer_item(slot, equip_item);
+
+				}
+			}
+			catch (e) {
+				console.log("Did not update equipped status");
+			}
+
+		}
+		else {
+			console.log("Not saved");
+		}
+	}
 	//Check to see if the user has tried to equip something to the head.
 	//If so move the item to the other stage.
 	character_layer.stage.on('equip_head', function(e) {
-		if (equip_item) {
-			character_layer.equip_item(e.target, equip_item);
-		}
+		equip(e.target);
 	});
 
 	character_layer.stage.on('equip_body', function(e) {
-		if (equip_item) {
-			character_layer.equip_item(e.target, equip_item);
-		}
+		equip(e.target);
 	});
 
 	character_layer.stage.on('equip_main_hand', function(e) {
-		if (equip_item) {
-			character_layer.equip_item(e.target, equip_item);
-		}
+		equip(e.target);
 	});
 
 	character_layer.stage.on('equip_off_hand', function(e) {
-		if (equip_item) {
-			character_layer.equip_item(e.target, equip_item);
-		}
+		equip(e.target);
 	});
 
 	//If the user finishes the drag on the stage and not in a rectangle, don't equip it
@@ -764,8 +871,10 @@ function manage_inventory(direction) {
 	// Sort the items into those that have an assigned space
 	// and those that don't. "-1" is the default value provided by
 	// the Item django model (see MUD/models.py)
+	let equipped_items = [];
 	let placed_items = [];
 	let unplaced_items = [];
+
 	item_data.forEach((item) => {
 		if (item.currentSpaceIndex === "-1") {
 			unplaced_items.push(item);
@@ -775,12 +884,13 @@ function manage_inventory(direction) {
 		}
 	});
 
+
 	//Place items that have a location first
 	placed_items.forEach((item) => {
-		const item_position = item_layer_wrapper.index_to_spaceid(item.currentSpaceIndex);
+		const current_item_position = item_layer_wrapper.index_to_spaceid(item.currentSpaceIndex);
+		const last_item_position = item_layer_wrapper.index_to_spaceid(item.lastSpaceIndex);
 
-		let current_item = new_item(item.name, item_position[0], item_position[1], item.width, item.height, media_url + item.image, item_layer_wrapper, stage_wrapper);
-
+		let current_item = new_item(item, current_item_position, last_item_position, item_layer_wrapper, character_layer, stage_wrapper);
 		character_items[item.name] = current_item;
 	});
 
@@ -788,9 +898,12 @@ function manage_inventory(direction) {
 	unplaced_items.forEach((item) => {
 		let next_space = item_layer_wrapper.next_empty_space();
 		if (next_space !== "none") {
-			let current_item = new_item(item.name, next_space[0], next_space[1], item.width, item.height, media_url + item.image, item_layer_wrapper, stage_wrapper);
+			let current_item = new_item(item, next_space, next_space, item_layer_wrapper, character_layer, stage_wrapper);
 			character_items[item.name] = current_item;
-			save_item(item.name, item_layer_wrapper.spaceid_to_index(next_space), item_layer_wrapper.spaceid_to_index(next_space));
+
+			if (update_item_position(item.name, item_layer_wrapper.spaceid_to_index(next_space), item_layer_wrapper.spaceid_to_index(next_space))) {
+				console.log("saved");
+			}
 		}
 		else {
 			console.log("No more free spaces");
@@ -798,14 +911,7 @@ function manage_inventory(direction) {
 	});
 
 
-	/**
-	 * POSTs updated location information for item "name" to server
-	 *
-	 * @param {String} name - Name of the item
-	 * @param {String} lastSpaceIndex - The last space this item occupied
-	 * @param {String} currentSpaceIndex - The current space this item occupies
-	 */
-	function save_item(name, lastSpaceIndex, currentSpaceIndex) {
+	function post_data(data) {
 		fetch('/character/update_item', {
 			credentials: 'same-origin',
 			headers: {
@@ -814,21 +920,72 @@ function manage_inventory(direction) {
 			},
 			method: 'post',
 			body: JSON.stringify({
-				'item_data': {
-
-					name: name,
-					lastSpaceIndex: lastSpaceIndex,
-					currentSpaceIndex: currentSpaceIndex,
-				}
+				'item_data': data,
 			}),
-		})
-			//TODO handle response and feedback to user in more userfriendly manner
-			.then((response) => {
-				if (response.status === 404) {
-					throw "Could not save";
-				}
-			});
-	}// save_item()
+		}).then((response) => {
+			if (response.status === 404) {
+				throw "Could not save";
+			}
+		});
+	}
+
+	/**
+	 * POSTs updated location information for item "name" to server
+	 *
+	 * @param {String} name - Name of the item
+	 * @param {String} lastSpaceIndex - The last space this item occupied
+	 * @param {String} currentSpaceIndex - The current space this item occupies
+	 */
+	function update_item_position(name, lastSpaceIndex, currentSpaceIndex) {
+		let data = {
+			'name': name,
+			'update': 'location',
+			'lastSpaceIndex': lastSpaceIndex,
+			'currentSpaceIndex': currentSpaceIndex,
+		};
+
+		try {
+			post_data(data);
+			return true;
+		}
+		catch (e) {
+			return false;
+		}
+	}// update_item_position()
+
+	function update_equipped_status(name, equipped_status) {
+		let data = {
+			'name': name,
+			'update': 'equipped',
+			'equipped': equipped_status,
+		};
+
+		try {
+			post_data(data);
+			return true;
+		}
+		catch (e) {
+			return false;
+		}
+	}
+
+	function update_equipped_location(name, equipped_status, lastSpaceIndex, currentSpaceIndex) {
+		let data = {
+			'name': name,
+			'update': 'both',
+			'equipped': equipped_status,
+			'lastSpaceIndex': lastSpaceIndex,
+			'currentSpaceIndex': currentSpaceIndex,
+		};
+
+		try {
+			post_data(data);
+			return true;
+		}
+		catch (e) {
+			return false;
+		}
+	}
 
 
 
@@ -848,21 +1005,20 @@ function manage_inventory(direction) {
 		// If there is only one item, any drag is safe if the last and current locations are not the same, so save it.
 		if (item_layer_wrapper.layer.children.length === 1) {
 			if (moved_item.lastSpaceID !== new_possible_location) {
-				try {
-					save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location));
+				//If we don't have an equipped item, we are not transferring so update position
+				if (!equip_item) {
+					if (update_item_position(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location))) {
 
-					//Update in layer manager
-					item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
-					item_layer_wrapper.add_item_to(new_possible_location, moved_item.name);
+						//Update in layer manager
+						item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
+						item_layer_wrapper.add_item_to(new_possible_location, moved_item.name);
 
-					//Update item
-					moved_item.lastSpaceID = moved_item.currentSpaceID;
-					moved_item.currentSpaceID = new_possible_location;
+						//Update item
+						moved_item.lastSpaceID = moved_item.currentSpaceID;
+						moved_item.currentSpaceID = new_possible_location;
 
-					console.log("saved" + moved_item.currentSpaceID);
-				}
-				catch (e) {
-					console.log("not saved");
+						console.log("saved" + moved_item.currentSpaceID);
+					}
 				}
 			}
 		}
@@ -891,23 +1047,23 @@ function manage_inventory(direction) {
 
 			// If we can save the new move and the item has moved from its last position in the grid
 			if (can_save && moved_item.lastSpaceID !== new_possible_location) {
-				try {
-					//Save the changes
-					save_item(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location));
+				//Save the changes
 
-					//Update layer manager
-					moved_item.currentSpaceID = new_possible_location;
-					item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
-					item_layer_wrapper.add_item_to(new_possible_location, moved_item.name);
+				//If we don't have an equipped item, we are not transferring so update position
+				if (!equip_item) {
+					if (update_item_position(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location))) {
 
-					//Update item
-					moved_item.lastSpaceID = moved_item.currentSpaceID;
-					moved_item.currentSpaceID = new_possible_location;
+						//Update layer manager
+						moved_item.currentSpaceID = new_possible_location;
+						item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
+						item_layer_wrapper.add_item_to(new_possible_location, moved_item.name);
 
-					console.log("saved");
-				}
-				catch (e) {
-					console.log("Not saved");
+						//Update item
+						moved_item.lastSpaceID = moved_item.currentSpaceID;
+						moved_item.currentSpaceID = new_possible_location;
+
+						console.log("saved");
+					}
 				}
 			}
 		}
