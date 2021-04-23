@@ -73,21 +73,20 @@ def manage_inventory(request):
     if not character:
         return redirect(reverse("view_character"))
 
-    character_items = list(character.items.all().order_by('item_id'))
+    character_items = list(character.items.all().order_by("item_id"))
 
     item_ids = [ItemSettings.item_id for ItemSettings in character_items]
 
     item_data = list(
-        Item.objects.filter(pk__in=item_ids).order_by('id').values(
-            "name", "image", "item_type", "slot", "width", "height"
-        )
+        Item.objects.filter(pk__in=item_ids)
+        .order_by("id")
+        .values("name", "image", "item_type", "slot", "width", "height")
     )
 
     for index, item in enumerate(item_data):
-        item['lastSpaceIndex'] = character_items[index].lastSpaceIndex
-        item['currentSpaceIndex'] = character_items[index].currentSpaceIndex
-        item['equipped'] = character_items[index].equipped
-
+        item["lastSpaceIndex"] = character_items[index].lastSpaceIndex
+        item["currentSpaceIndex"] = character_items[index].currentSpaceIndex
+        item["equipped"] = character_items[index].equipped
 
     context = {"inventory_size": character.inventory_size, "items": item_data}
 
