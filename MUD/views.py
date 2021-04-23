@@ -105,12 +105,34 @@ def update_item(request):
 
     if request.method == "POST":
         new_item_data = json.load(request)["item_data"]
-        itemsettings = ItemSettings.objects.get(item__name=new_item_data["name"], character_id = character.id)
-        if itemsettings:
-            itemsettings.currentSpaceIndex = new_item_data["currentSpaceIndex"]
-            itemsettings.lastSpaceIndex = new_item_data["lastSpaceIndex"]
-            itemsettings.save()
-            return HttpResponse(200)
+
+        itemsettings = ItemSettings.objects.get(
+            item__name=new_item_data["name"], character_id=character.id
+        )
+
+        if new_item_data["update"] == "both":
+            if itemsettings:
+                itemsettings.currentSpaceIndex = new_item_data[
+                    "currentSpaceIndex"
+                ]
+                itemsettings.lastSpaceIndex = new_item_data["lastSpaceIndex"]
+                itemsettings.equipped = new_item_data["equipped"]
+                itemsettings.save()
+                return HttpResponse(200)
+        elif new_item_data["update"] == "location":
+            if itemsettings:
+                itemsettings.currentSpaceIndex = new_item_data[
+                    "currentSpaceIndex"
+                ]
+                itemsettings.lastSpaceIndex = new_item_data["lastSpaceIndex"]
+                itemsettings.save()
+                return HttpResponse(200)
+        else:
+            if itemsettings:
+                print(new_item_data["equipped"])
+                itemsettings.equipped = new_item_data["equipped"]
+                itemsettings.save()
+                return HttpResponse(200)
 
         return HttpResponse(404)
     else:
