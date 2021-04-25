@@ -1,3 +1,29 @@
+/**** This file provides a "new_item" function, that is resonsible for parsing the item
+    * data passed in from the database and doing two things:
+    * 1.) Creates a Konva image object and adds it to the "layer" that is passed in.
+    *     Assings the konva image the name of item.name
+    *
+    * 2.) Creates an object that provides the following properties and methods for the item:
+    *       * lastSpaceID       - the last cell in inventory occupied by the item
+    *       * currentSpaceID    - the current cell in inventory occupied by the item
+    *       * width             - How many cells wide the image is
+    *       * height            - How many cells tall the image is
+    *       * name              - Set the item.name
+    *       * slot              - The slot type this item can be equipped in
+    *       * item_type         - Type of item (shield, armour, weapon, etc)
+    *       * equipped          - Boolean to show if the item is equipped
+    *       * layer             - The layer to draw the item to
+    *       * equipped_location - If equipped, the Konva container it is stored in
+    *       * cell_size         - The size of "one" cell. Used to determine position and height and width.
+    *       * move_to(spaceID)  - Function to move the konva image to spaceID
+    *       * ondragend         - Moves the item to the nearest column / row if equiped
+    *
+    * It is important that the konva item and object have the same name as that is how they are "Linked"
+    * in this application.
+    *
+    * Names in Konva are not unique, although I have ensured with my items the names are unique. I might
+    * change to IDs at a later date
+    */
 const media_url = JSON.parse(document.getElementById('media_url').textContent);
 
 export function new_item(item, current_item_position, last_item_position, layer, cell_size, slot = null) {

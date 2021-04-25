@@ -1,5 +1,4 @@
 import { create_character_stage } from './character_stage.js';
-
 import { create_item_layer_wrapper, create_inventory_wrapper } from './inventory_stage.js';
 /**
  *
@@ -62,6 +61,7 @@ window.addEventListener('resize', (e) => {
 
 /**
  * Creates all constituent parts of the inventory and links them together.
+ * Returns an object with a redraw function that allows the grid to be redrawn.
  *
  * @param {String} direction - Which direction are we drawing: horizontal or vertical
  * @return {Object} Object that exposes:
@@ -69,11 +69,17 @@ window.addEventListener('resize', (e) => {
  */
 function manage_inventory(direction) {
     let wrapper = {}
+
+    //The Konva stage and grid for the inventory
     let inventory_stage = create_inventory_wrapper(direction, character_inventory_size);
+    //The items of the inventory
     let inventory = create_item_layer_wrapper(inventory_stage.rows, inventory_stage.cols, inventory_stage.grid_cell_size);
+    //The items and the stickman for the character
     let character = create_character_stage();
 
+    //Used to hold a konva node to transfer from inventory to character via drag
     let selected_konva_item;
+    //Used to hold a konva node to transfer from character to inventory via drag
     let konva_item_to_unequip;
 
 
@@ -84,6 +90,7 @@ function manage_inventory(direction) {
      */
     inventory.layer.on('toggle_equip', (e) => {
         const slot = character[e.item_wrapper.slot];
+        //Array of objects to send to the database
         const data = [];
 
         //There is an item currently equipped
@@ -241,8 +248,6 @@ function manage_inventory(direction) {
         selected_konva_item = null;
     };
 
-
-
     /**
      * On any mouse up event on the character stage, set the selected_item
      * back to null. The item will have already been swapped at this point
@@ -252,7 +257,6 @@ function manage_inventory(direction) {
     character.stage.on('mouseup touchend', (e) => {
         selected_konva_item = null;
     });
-
 
     /**
      * The various "equip_" events are fired from the Konva groups
@@ -279,8 +283,8 @@ function manage_inventory(direction) {
     });
 
     /*
-        * ****** END OF DRAG TO EQUIP
-    */
+     * ****** END OF DRAG TO EQUIP
+     */
 
 
 
@@ -302,10 +306,20 @@ function manage_inventory(direction) {
         konva_item_to_unequip = null;
     });
 
+
+    /**
+     * Called when a mouse up event happens on the inventory stage.
+     * This checks to see if a konva node has been stored in 
+     * konva_item_to_unequip as a flag that the user wants to unequip
+     * an item and store it inventory.
+     *
+     * @param {String} e.spaceID - The spaceID for the cell that the mouseup was triggered on
+     */
     inventory_stage.stage.on('unequip', (e) => {
         //If we are ending an unequip item drag
         if (konva_item_to_unequip) {
             const data = [];
+
             //It's not an empty space, swap the items
             const item = inventory.get_item_at_location(e.spaceID);
             if (item) {

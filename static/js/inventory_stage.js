@@ -1,16 +1,42 @@
+/**** This file provides the functionality to create a Konva stage, and draw a grid on it.
+    * It also allows for the creation of an "item_layer" that manages items and their locations.
+    * It provides functions for manipulating that.
+    */
 import { new_item } from './item.js';
 
 //Change this as needed.
 const GRID_CELL_SIZE = 75;
 
+
+/**
+ * Creates an object that allows users to manage items in a grid drawn on a Konva stage.
+ *
+ * Creates an object called "spaces" where each property name corresonds to a grid cell (e.g, 01)
+ * If an item is stored there the value of that property would be set to the item name
+ * If no item is stored there the value of that property would be false
+ *
+ * @param {Number} rows      - How many rows there are in the grid.
+ * @param {Number} cols      - How many cols there are in the grid.
+ * @param {Number} cell_size - Size of one cell on the grid
+ * @return {Object}          - Exposes a number of properties and methods for managing the inventory.
+ */
 function create_item_layer_wrapper(rows, cols, cell_size) {
 
     let wrapper = {};
+    // the konva layer to draw the items to
     let layer;
+    // Object that keeps track of where items are stored
     let spaces = {};
+    // Keep track of spaces items were in before the grid is redrawn
     let old_spaces = {};
     let items = {};
 
+    /**
+     * Generates the spaces object
+     *
+     * @param {Number} rows - Number of rows
+     * @param {Number} cols - Number of columns
+     */
     function create(rows, cols) {
 
         old_spaces = Object.assign({}, spaces);
@@ -38,7 +64,9 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
     create(rows, cols);
 
     /*
-     * Converts a spaceid to equivalent index
+     * Converts a spaceid to equivalent index for example if 03 was the third cell it would return 3
+     * Used to store item locations in the database as inventory sizes and shapes can differ
+      * so spaceid's are not suitable for persistant storage
      * @param {String} space_id - space id of cell: row + "" + col
      * @return {Integer} -1 if not found, otherwise the index of the cell.
      */
@@ -52,7 +80,7 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
 
     /**
      * Converts an id to spaceid equivalent
-     *
+     * Used for reading the position from the database and getting the equivalent grid location
      * @param {Number} index - The index to convert
      * @return {String} Empty string if not found, otherwise the spaceid
      */
@@ -64,7 +92,12 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
         return available_spaces[index];
     }
 
-    //throws error
+    /**
+     * Used to load items into the inventory stage on page load.
+     *
+     * @param {Object} item_data - Object from backend that contains item info
+     * @throws {Error} - If not enough inventory spaces to load items
+     */
     wrapper.load_item = function(item_data) {
         let currentSpace, lastSpace;
         //If the item has location information use it
@@ -95,6 +128,13 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
         }
     }
 
+
+    /**
+     * Checks to see if the grid location at spaceID is empty
+     *
+     * @param {String} spaceID - Grid location for example 01,22,03, etc
+     * @return {Boolean} True if free, false if not
+     */
     wrapper.is_space_empty = function(spaceID) {
         if (spaceID in wrapper.spaces) {
             return !wrapper.spaces[spaceID];
@@ -102,6 +142,12 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
         return false;
     }
 
+    /**
+     * Swaps two items in the inventory
+     *
+     * @param {String} item_one_name - Name of first item
+     * @param {String} item_two_name - Name of second item
+     */
     wrapper.swap_items = function(item_one_name, item_two_name) {
         const item_one = wrapper.items[item_one_name];
         const item_two = wrapper.items[item_two_name];
@@ -114,6 +160,12 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
         item_two.move_to(temp_spaceid);
     };
 
+    /**
+     * Finds which grid item_name is stored in
+     *
+     * @param {String} item_name - Name of the item to search for
+     * @return {String} "none" if not found, or spaceid if found
+     */
     wrapper.get_item_location = function(item_name) {
         let space_index = "none";
         Object.entries(wrapper.spaces).forEach(([key, value]) => {
@@ -125,10 +177,23 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
         return space_index;
     };
 
+    /**
+     * Get the item stored at location
+     *
+     * @param {String} spaceID - Location to get item from
+     * @return {String} spaceID if found, otherwise undefined
+     */
     wrapper.get_item_at_location = function(spaceID){
         return wrapper?.spaces[spaceID];
     }
 
+    /**
+     * Move item to location
+     *
+     * @param {String} spaceID - Location to move item to
+     * @param {String} item_name - Name of item to move
+     * @return {Boolean} True if item was found and moved, false otherwise
+     */
     wrapper.move_item_to = function(spaceID, item_name) {
         let item_object = wrapper.items[item_name];
         //If the spaceID is empty
@@ -143,6 +208,11 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
         return false;
     }
 
+    /**
+     * Removes item from inventory
+     *
+     * @param {String} item_name - Name of item to remove
+     */
     wrapper.remove_item = function(item_name) {
         const item_object = wrapper?.items[item_name];
 
@@ -161,10 +231,9 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
      * Resizing the image
      * Moving konva object to the correct space
      *
-     * @param {[TODO:type]} konva_item - [TODO:description]
-     * @param {[TODO:type]} item_object - [TODO:description]
-     * @param {[TODO:type]} spaceID - [TODO:description]
-     * @return {[TODO:type]} [TODO:description]
+     * @param {Konva.node} konva_item - Item to add
+     * @param {Object} item_object - Twined item object to the konva item (see item.js)
+     * @param {String} spaceID - Location to add item to
      */
     wrapper.add_item = function(konva_item, item_object, spaceID) {
         if (spaceID === "-1" || !(spaceID in wrapper.spaces)) {
@@ -191,6 +260,7 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
             });
         }
     }
+
     /**
      * If spaceID is in spaces mark it as empty
      *
