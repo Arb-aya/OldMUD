@@ -10,7 +10,6 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
     let spaces = {};
     let old_spaces = {};
     let blocked_spaces = 0;
-    let number_of_items = 0;
     let items = {};
 
     function create(rows, cols) {
@@ -94,7 +93,6 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
             spaces[currentSpace] = item.name;
             items[item.name] = item;
 
-            wrapper.number_of_items++;
         }
     }
 
@@ -152,7 +150,6 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
         if (item_object) {
             wrapper.remove_item_from(wrapper.get_item_location(item_object.name));
             delete wrapper.items[item_name];
-            wrapper.number_of_items--;
         }
     }
 
@@ -268,7 +265,6 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
     wrapper.blocked_spaces = blocked_spaces;
     wrapper.layer = layer;
     wrapper.create = create;
-    wrapper.number_of_items = number_of_items;
     wrapper.items = items;
 
     /*
