@@ -1,14 +1,12 @@
+import { create_character_stage } from './character_stage.js';
+
+import { create_item_layer_wrapper, create_inventory_wrapper } from './inventory_stage.js';
 /**
  *
- * This file is responsible for displaying the inventory to the user
- * as well as managing user interactions with the inventory.
+ * This file links all of the constituent parts of the inventory frontend.
+ * Handles redrawing the grid if the viewport size changes.
  *
- * It provides the functionality to prevent the user from using selected
- * cells in the grid.
- *
- * Manages equipped items and lets the user equip items too.
- *
- * Beware all ye who enter; do so at your own peril.
+ * Loads in the data from the backend and distributes it appropriately.
  */
 
 //Contains character item data loaded in from backend
@@ -16,9 +14,6 @@ let item_data;
 
 //Contains character inventory size loaded in from backend
 let character_inventory_size;
-
-//Prefix we need to access item images
-let media_url;
 
 // Do we initially display the grid horizontally or vertically
 let initial_direction;
@@ -31,27 +26,15 @@ let inventory_manager;
 
 document.addEventListener('DOMContentLoaded', (e) => {
 
-	// Load in data from backend. Passed via json_script filter.
-	item_data = JSON.parse(document.getElementById('itemdata').textContent);
-	character_inventory_size = Number(JSON.parse(document.getElementById('inventory_size').textContent));
-	media_url = JSON.parse(document.getElementById('media_url').textContent);
-	csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    // Load in data from backend. Passed via json_script filter.
+    item_data = JSON.parse(document.getElementById('itemdata').textContent);
+    character_inventory_size = Number(JSON.parse(document.getElementById('inventory_size').textContent));
+    csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-	// See is_small_breakpoint for more details
-	initial_direction = is_small_breakpoint() ? 'vertical' : 'horizontal';
+    // See is_small_breakpoint for more details
+    initial_direction = is_small_breakpoint() ? 'vertical' : 'horizontal';
 
-	inventory_manager = manage_inventory(initial_direction);
-});
-
-
-// If the window resizes we need to check if we want to change to a horizontal / vertical grid
-window.addEventListener('resize', (e) => {
-	// Only redraw the grid if it changes from horizontal to vertical or vice versa
-	let new_direction = is_small_breakpoint() ? 'vertical' : 'horizontal';
-	if (new_direction !== initial_direction) {
-		initial_direction = new_direction;
-		inventory_manager.redraw(new_direction);
-	}
+    inventory_manager = manage_inventory(initial_direction);
 });
 
 
@@ -62,645 +45,20 @@ window.addEventListener('resize', (e) => {
  *
  */
 function is_small_breakpoint() {
-	let element = document.getElementById('breakpoint-detect');
-	return window.getComputedStyle(element).display === 'block';
+    let element = document.getElementById('breakpoint-detect');
+    return window.getComputedStyle(element).display === 'block';
 }
 
+// If the window resizes we need to check if we want to change to a horizontal / vertical grid
+window.addEventListener('resize', (e) => {
+    // Only redraw the grid if it changes from horizontal to vertical or vice versa
+    let new_direction = is_small_breakpoint() ? 'vertical' : 'horizontal';
+    if (new_direction !== initial_direction) {
+        initial_direction = new_direction;
+        inventory_manager.redraw(new_direction);
+    }
+});
 
-/**
- * Creates an object with properties and methods that allow
- * the management of the konva stage object
- *
- * @param {String} [direction] - The way are we displaying the grid. horizontal or vertical
- * @return {Object} Object that allows users to access:
- * 		object.cols                                      - Number of columns in the stage (dictated by GRID_CELL_SIZE)
- * 		object.row                                       - Number of rows in the stage (dictated by GRID_CELL_SIZE)
- * 		object.stage                                     - The konva stage object
- * 		object.display_size                              - The number of cells to display to the user. Might differ from
-				 * 				   character inventory size
- */
-function create_stage_wrapper(direction = 'horizontal') {
-
-	let stage_wrapper = {};
-
-	//Change this as needed.
-	const GRID_CELL_SIZE = 75;
-
-	let rows, cols;
-	let width, height;
-	let display_size;
-	let stage;
-
-	function draw(direction) {
-
-		// Work out how many cells to display to the user
-		// Currently makes an even number to display
-		// TODO: More complex space management algorithm
-		display_size = character_inventory_size;
-
-		if (character_inventory_size % 2 !== 0) {
-			display_size = character_inventory_size + 1;
-		}
-
-		// Do we display them vertically or horizontally
-		cols = display_size / 2;
-		rows = 2;
-
-		if (direction === "vertical") {
-			cols = 2;
-			rows = display_size / 2;
-		}
-
-		stage_wrapper.cols = cols;
-		stage_wrapper.rows = rows;
-
-		width = cols * GRID_CELL_SIZE;
-		height = rows * GRID_CELL_SIZE;
-
-		// We only create on stage and update it on redraws
-		if (!stage) {
-			stage = new Konva.Stage({
-				container: 'inventory',
-				width: width,
-				height: height
-			});
-		}
-		else {
-			stage.width(width);
-			stage.height(height);
-		}
-	}
-
-	draw(direction);
-
-
-	stage_wrapper.display_size = display_size;
-	stage_wrapper.grid_cell_size = GRID_CELL_SIZE;
-	stage_wrapper.stage = stage;
-	stage_wrapper.draw = draw;
-
-	return stage_wrapper;
-}
-
-/**
- * Draws a grid of lines on a konva layer object
- *
- * @param {Number} rows           - Number of rows to have (usually passed in from obj from create_stage_wrapper)
- * @param {Number} cols           - Number of columns to have (usually passed in from obj from create_stage_wrapper)
- * @param {Number} grid_cell_size - Size of one grid square (usually passed in from obj from create_stage_wrapper)
- * @param {Number} width          - Maximum width of the stage to draw on (makes sure lines are drawn across the entire stage)
- * @param {Number} height         - Maximum height of the stage to draw on (makes sure lines are drawn across the entire stage)
- * @return {Object}               - Object exposes the konva layer via obj.layer and the function used to draw the grid which can be recalled if needed via obj.draw()
- */
-function create_grid_layer(rows, cols, grid_cell_size, width, height) {
-	let grid_layer_wrapper = {};
-	let grid_layer;
-
-	function draw(rows, cols, grid_cell_size, width, height) {
-
-		if (!grid_layer) {
-			grid_layer = new Konva.Layer();
-		}
-		else {
-			grid_layer.destroyChildren();
-			grid_layer.clear();
-		}
-
-		for (let i = 0; i <= cols; i++) {
-			grid_layer.add(new Konva.Line({
-				points: [Math.round(i * grid_cell_size), 0, Math.round(i * grid_cell_size), height],
-				stroke: '#ddd',
-				strokewidth: 1,
-			}));
-		}
-
-		grid_layer.add(new Konva.Line({ points: [0, 0, 10, 10] }));
-		for (let j = 0; j <= rows; j++) {
-			grid_layer.add(new Konva.Line({
-				points: [0, Math.round(j * grid_cell_size), width, Math.round(j * grid_cell_size)],
-				stroke: '#ddd',
-				strokewidth: 1,
-			}));
-		}
-		grid_layer.batchDraw();
-	}
-
-	draw(rows, cols, grid_cell_size, width, height);
-
-	grid_layer_wrapper.draw = draw;
-	grid_layer_wrapper.layer = grid_layer;
-	return grid_layer_wrapper;
-}
-
-
-/**
- * Creates a wrapper around a Konva layer used for items.
- * The wrapper provides functionality for managing free spaces
- * in the inventory.
- *
- * @param {Number} rows - Number of rows (Usually passed in from a konva stage object and should be the same as fed to the grid layer)
- * @param {Number} cols - Number of columns (Usually passed in from a konva stage object and should be the same as fed to the grid layer)
- * @returns {Object} - Exposes the following:
- * 			obj.layer                           - Konva layer object
- * 			obj.create                          - Used to update the layer on a redraw
- * 			obj.spaces                          - Internal representation of where items are stored in the grid
- * 			obj.old_spaces                      - Internal representation of where items were stored in the grid before a redraw.
- * 			obj.index_to_spaceid(index)         - Returns the "spaceid" of the cell at "index". For example 0                     - > "00"
- * 			obj.spaceid_to_index(spaceid)       - Returns the index of the cell "spaceid". For example "00"                       - > 0
- * 			obj.next_free_space()               - Returns the 'spaceid' of the next free  cell in the grid.
- * 			obj.add_item_to(spaceid, item name) - Registers the item of "item name" at "spaceid"
- * 			obj.remove_item_from(spaceid)       - Sets the value of the grid to false. Effectively "removing" any items.
- */
-function create_item_layer_wrapper(rows, cols) {
-
-	let layer_wrapper = {};
-	let layer;
-	let spaces = {};
-	let old_spaces = {};
-
-	function create(rows, cols) {
-
-		old_spaces = Object.assign({}, spaces);
-
-		if (!layer) {
-			layer = new Konva.Layer();
-		}
-		else {
-			layer.clear();
-		}
-
-
-		spaces = {}
-
-		for (let i = 0; i < rows; i++) {
-			for (let j = 0; j < cols; j++) {
-				spaces[i + "" + j] = false;
-			}
-		}
-
-		layer_wrapper.spaces = spaces;
-		layer_wrapper.old_spaces = old_spaces;
-	};
-
-	create(rows, cols);
-
-	/*
-	 * Converts a spaceid to equivalent index
-	 * @param {String} space_id - space id of cell: row + "" + col
-	 * @return {Integer} -1 if not found, otherwise the index of the cell.
-	 */
-	layer_wrapper.spaceid_to_index = function(space_id) {
-		const available_spaces = Object.getOwnPropertyNames(spaces).sort();
-		return available_spaces.findIndex((space) => space === space_id);
-	}
-
-	/**
-	 * Converts an id to spaceid equivalent
-	 *
-	 * @param {Number} index - The index to convert
-	 * @return {String} Empty string if not found, otherwise the spaceid
-	 */
-	layer_wrapper.index_to_spaceid = function(index) {
-		const available_spaces = Object.getOwnPropertyNames(spaces).sort();
-		if (index < 0 || index > available_spaces.length) {
-			return ""
-		}
-		return available_spaces[index];
-	}
-
-	/**
-	 * If spaceID is in spaces mark it as occupied
-	 *
-	 * @param {String} spaceID - The string representing the space (col+""+row)
-	 */
-	layer_wrapper.add_item_to = function(spaceID, item_name) {
-		if (spaceID in spaces) {
-			spaces[spaceID] = item_name;
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * If spaceID is in spaces mark it as empty
-	 *
-	 * @param {String} spaceID - The string representing the space (col+""+row)
-	 */
-	layer_wrapper.remove_item_from = function(spaceID) {
-		if (spaceID in spaces) {
-			spaces[spaceID] = false;
-		}
-	}
-	/** Checks for the next free space in the inventory
-	 *
-	 * @return {String} The space ID of the next free space (col+""+row) or "none" if no free spaces
-	 */
-	layer_wrapper.next_empty_space = function() {
-		// Turn the property names of the this.spaces object into an array.
-		// Filter out any spaces that are "false" as they are not free
-		// Sort the array.
-		// The next free space will be the first element of this array
-		const free_spaces = Object.getOwnPropertyNames(spaces).sort().filter((id) => {
-			return !spaces[id];
-		});
-
-		if (free_spaces.length > 0) {
-			return free_spaces[0];
-		}
-		else {
-			return "none";
-		}
-	};
-
-	layer_wrapper.layer = layer;
-	layer_wrapper.create = create;
-
-	return layer_wrapper;
-};
-
-
-/**
- * Creates a new image object and registers it with item_layer via the add_item_to method.
- *
- * It also draws the item on the konva layer and links the konva representation and internal representation of the item via "item.name"
- * Handles the drag and drop logic, as well as "snapping" items to the grid.
- * Code for snapping items to the grid taken from: https://codepen.io/pierrebleroux/pen/gGpvxJ
- *
- * @param {String} name                   - Name of the item
- * @param {Number} col                    - Column of the grid to store the item
- * @param {Number} row                    - Row of the grid to store the item
- * @param {Number} width                  - How many "cells" the item occupies on the X axis
- * @param {Number} height                 - How many "cells" the item occupies on the Y axis
- * @param {String} url                    - URL to the image for the item
- * @param {Number} grid_cell_size         - The size of one grid cell in pixels
- * @param {Item Layer Wrapper} item_layer - The Konva layer to draw the item on (usually the layer returned from create_item_layer_wrapper)
- * @param {Stage Wrapper} stage           - Stage wrapper object that the item_layer will be added to (usually the stage from create_stage_wrapper)
- * @returns {Object} - Object exposes the following for each item:
- * 			obj.name         - name of the item
- * 			obj.lastSpaceID  - the last cell in the grid that the item occupied
- * 			obj.currentSpace - the current cell in the grid that the item occupies
- * 			obj.width        - The width of the item (in grid cells)
- * 			obj.height       - The height of the item (in grid cells)
- */
-function new_item(item, current_item_position, last_item_position, item_layer, equipped_layer, stage_wrapper) {
-
-	// Object returned from this method
-	let item_wrapper = {};
-
-	// Space IDs are IDs that describe one cell in the grid. For example, 00 is the first cell (top left).
-	// We keep track of the last space occupied by an item as well as the current one.
-	item_wrapper.lastSpaceID = last_item_position;
-	item_wrapper.currentSpaceID = current_item_position;
-
-	item_wrapper.width = item.width;
-	item_wrapper.height = item.height;
-
-	item_wrapper.name = item.name;
-	item_wrapper.slot = item.slot;
-	item_wrapper.item_type = item.item_type;
-	item_wrapper.equipped = item.equipped;
-
-	let drag_row;
-	let old_drag_row;
-
-	//Used to check if user has moved up or down
-	const set_row = (row) => {
-		old_drag_row = drag_row;
-		drag_row = row;
-	};
-
-	const get_rows = () => {
-		return [drag_row, old_drag_row];
-	};
-
-
-	const url = media_url + item.image;
-	Konva.Image.fromURL(url, function(image) {
-		image.setAttrs({
-			x: current_item_position[1] * stage_wrapper.grid_cell_size,
-			y: current_item_position[0] * stage_wrapper.grid_cell_size,
-			width: item_wrapper.width * stage_wrapper.grid_cell_size,
-			height: item_wrapper.height * stage_wrapper.grid_cell_size,
-			draggable: true,
-			name: item.name,
-		});//setAttrs
-
-		//*
-		//code for drag and drop grid taken from:
-		//https://codepen.io/pierrebleroux/pen/ggpvxj
-		image.on('dragstart', (e) => {
-			image.moveToTop();
-		});
-
-		//Used to trigger a equip or unequip event.
-		image.on('dragmove', (e) => {
-			//If the item isn't currently equipped
-			if (!item_wrapper.equipped) {
-				let row = Math.round(image.y() / stage_wrapper.grid_cell_size);
-
-				set_row(row);
-				let rows = get_rows();
-				//If the user has moved up off the stage for the first time, they might want to equip items
-				if (rows[0] < 0 && rows[1] >= 0) {
-					image.fire('equip', {}, true);
-				}
-
-				//If the user has moved back down onto the stage, don't equip the items
-				if (rows[0] >= 0 && rows[1] < 0) {
-					image.fire('deselect', {}, true);
-				}
-			}
-		});
-
-		image.on('dragend', (e) => {
-			//If the item isn't equipped, the move is starting in the inventory
-			if (!item_wrapper.equipped) {
-				let col = Math.round(image.x() / stage_wrapper.grid_cell_size);
-				let row = Math.round(image.y() / stage_wrapper.grid_cell_size);
-
-				//If the image was moved out of the bounds of the stage, move it back
-				if (col < 0 || col >= stage_wrapper.cols || row >= stage_wrapper.rows || row < 0) {
-					image.position({
-						x: current_item_position[1] * stage_wrapper.grid_cell_size,
-						y: current_item_position[0] * stage_wrapper.grid_cell_size,
-					});
-				}
-				else { //Otherwise update the location
-					image.position({
-						x: col * stage_wrapper.grid_cell_size,
-						y: row * stage_wrapper.grid_cell_size
-					});
-				}
-
-				item_layer.layer.batchDraw();
-			}
-			// Item is equipped
-			else {
-				if (image.absolutePosition().y > equipped_layer.item_layer.height()) {
-					image.fire('unequip', {}, true);
-				}
-				else {
-					//TODO
-					//if the item that the drag ends over can be swapped, swap them
-					image.position({
-						x: 0,
-						y: 0,
-					});
-				}
-
-			}
-
-			equipped_layer.item_layer.batchDraw();
-		});
-
-		//If the item is equipped dictates which layer we add it to
-		if (item.equipped) {
-			equipped_layer.load_item(item.slot, image);
-
-		} else {
-			item_layer.layer.add(image);
-			item_layer.layer.batchDraw();
-		}
-	});
-
-	if (!item.equipped) {
-		item_layer.add_item_to(item.currentSpaceID, item.name);
-	}
-
-	return item_wrapper;
-}
-
-
-
-/**
- * Creates an area in the grid that the user is prevented from using to store items
- *
- * @param {String} name          - Name of the blocked area. Defaults to "blocked". Probably best not to change this.
- * @param {Number} row           - The row to block
- * @param {Number} col           - The column to block
- * @param {Number} width         - How many cells wide should it block
- * @param {Number} height        - How many cells high should it block
- * @param {Number} cell_size     - The size of one grid cell
- * @param {Object} layer_wrapper - The object returned by item_layer_wrapper
- * @returns {Object}                     - Object exposes the following for each item:
- * 			obj.name         - name of the item
- * 			obj.lastSpaceID  - the last cell in the grid that the item occupied
- * 			obj.currentSpace - the current cell in the grid that the item occupies
- */
-function block_inventory_space(name = "blocked", row, col, width, height, cell_size, layer_wrapper) {
-	const wrapper = {}
-	wrapper.lastSpaceID = row + "" + col;
-	wrapper.currentSpaceID = row + "" + col;
-	wrapper.name = name;
-
-	layer_wrapper.add_item_to(wrapper.currentSpaceID, name);
-
-	const blocked_space = new Konva.Rect({
-		x: col * cell_size,
-		y: row * cell_size,
-		width: width * cell_size,
-		height: height * cell_size,
-		fill: 'red',
-		opacity: 0.3,
-		name: name,
-	});
-
-	layer_wrapper.layer.add(blocked_space);
-	layer_wrapper.layer.batchDraw();
-	return wrapper;
-}
-
-
-function create_character_stage() {
-
-	let stage_wrapper = {};
-
-	const width = 300;
-	const height = 300;
-
-	const slot_width = 50;
-	const slot_height = 50;
-
-	let stage;
-
-	// We only create on stage and update it on redraws
-	if (!stage) {
-		stage = new Konva.Stage({
-			container: 'character',
-			width: width,
-			height: height
-		});
-	}
-	else {
-		stage.width(width);
-		stage.height(height);
-	}
-
-	//Draws the character and item slots. This is static.
-	let character_layer = new Konva.Layer();
-
-	//Draws equipped items. This can change and needs to be redrawn.
-	//So we need a separate layer.
-	let item_layer = new Konva.Layer();
-
-
-	//The group on the item_layer that is positioned above the
-	//Head rect on the character layer. This is the node the item
-	//is added to
-	var head = new Konva.Group({
-		name: 'head',
-		x: (width / 2) - (slot_width / 2),
-		y: slot_height / 3,
-	});
-
-	//The rectange drawn to show the head slot
-	var head_rect = new Konva.Rect({
-		x: (width / 2) - (slot_width / 2),
-		y: slot_height / 3,
-		width: slot_width,
-		height: slot_height,
-		fill: 'white',
-		opacity: 0.3,
-		stroke: 'white',
-		strokeWidth: 2,
-	});
-
-	//If a mouseup event occurs on the head slot, fire the equip head event
-	head_rect.on("mouseup", function(e) {
-		head.fire('equip_head', {}, true);
-	});
-
-
-	var main_hand = new Konva.Group({
-		name: 'main_hand',
-		x: 0,
-		y: (height / 2) - slot_height,
-	});
-
-	var main_hand_rect = new Konva.Rect({
-		x: 0,
-		y: (height / 2) - slot_height,
-		width: slot_width,
-		height: slot_height,
-		fill: 'white',
-		opacity: 0.3,
-		stroke: 'white',
-		strokeWidth: 2,
-		name: 'main_hand_slot',
-	});
-
-	main_hand_rect.on("mouseup", function(e) {
-		main_hand.fire('equip_main_hand', {}, true);
-	});
-
-	var off_hand = new Konva.Group({
-		name: 'off_hand',
-		x: width - slot_width,
-		y: (height / 2) - slot_height,
-	});
-
-	var off_hand_rect = new Konva.Rect({
-		x: width - slot_width,
-		y: (height / 2) - slot_height,
-		width: slot_width,
-		height: slot_height,
-		fill: 'white',
-		opacity: 0.3,
-		stroke: 'white',
-		strokeWidth: 2,
-		name: 'off_hand_slot',
-	});
-
-	off_hand_rect.on("mouseup", function(e) {
-		off_hand.fire('equip_off_hand', {}, true);
-	});
-
-
-	var body = new Konva.Group({
-		name: 'body',
-		x: (width / 2) - (slot_width / 2),
-		y: (height / 2) - slot_height,
-	});
-
-	var body_rect = new Konva.Rect({
-		x: (width / 2) - (slot_width / 2),
-		y: (height / 2) - slot_height,
-		width: slot_width,
-		height: slot_height,
-		fill: 'white',
-		opacity: 0.3,
-		stroke: 'white',
-		strokeWidth: 2,
-		name: 'body_slot',
-	});
-
-	body_rect.on("mouseup", function(e) {
-		body.fire('equip_body', {}, true);
-	});
-
-	//Stick man
-	Konva.Image.fromURL(media_url + 'stick.png', function(stickman) {
-		stickman.setAttrs({
-			x: 0,
-			y: 0,
-			opacity: 1,
-		});
-		character_layer.add(stickman);
-		character_layer.batchDraw();
-		stickman.zIndex(0);
-	});
-
-	character_layer.add(head_rect);
-	item_layer.add(head);
-
-	character_layer.add(body_rect);
-	item_layer.add(body);
-
-	character_layer.add(main_hand_rect);
-	item_layer.add(main_hand);
-
-	character_layer.add(off_hand_rect);
-	item_layer.add(off_hand);
-
-	character_layer.batchDraw();
-
-	stage.add(character_layer, item_layer);
-
-	stage_wrapper.stage = stage;
-	stage_wrapper.item_layer = item_layer;
-
-	stage_wrapper.transfer_item = function(slot, item) {
-
-		item.moveTo(slot);
-
-		//Resize it to the same size as the slot rectangles
-		item.width(slot_width);
-		item.height(slot_height);
-
-		//Position it in the top left of the group
-		item.x(0);
-		item.y(0);
-
-		stage.batchDraw();
-	}
-
-	stage_wrapper.load_item = function(slot, item) {
-		let slot_group = item_layer.findOne(node => node.name() === slot);
-		slot_group.add(item);
-
-		//Resize it to the same size as the slot rectangles
-		item.width(slot_width);
-		item.height(slot_height);
-
-		//Position it in the top left of the group
-		item.x(0);
-		item.y(0);
-
-		stage.batchDraw();
-	}
-
-	return stage_wrapper;
-}
 
 /**
  * Creates all constituent parts of the inventory and links them together.
@@ -710,372 +68,421 @@ function create_character_stage() {
  * 		obj.redraw() - Used when we need to redraw the grid horizontally or vertically
  */
 function manage_inventory(direction) {
-	let inventory = {}
-
-	let stage_wrapper = create_stage_wrapper(direction);
-	let grid = create_grid_layer(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size, stage_wrapper.stage.width(), stage_wrapper.stage.height());
-	let item_layer_wrapper = create_item_layer_wrapper(stage_wrapper.rows, stage_wrapper.cols);
-	let character_layer = create_character_stage();
-
-	let equip_item = null;
-
-	//Make a note that the user might want to equip this item
-	item_layer_wrapper.layer.on('equip', function(e) {
-		if (e.target) {
-			equip_item = e.target;
-		}
-	});
-
-	item_layer_wrapper.layer.on('deselect', function(e) {
-		equip_item = null;
-	});
-
-
-	character_layer.item_layer.on('unequip', function(e) {
-		const new_location = item_layer_wrapper.next_empty_space();
-		const new_location_index = item_layer_wrapper.spaceid_to_index(new_location);
-
-		if (new_location !== "none") {
-			const item_name = e.target.name();
-			if (update_equipped_location(item_name, false, new_location_index, new_location_index)) {
-				const character_item = character_items[item_name];
-				e.target.moveTo(item_layer_wrapper.layer);
-
-				character_item.lastSpaceID = new_location;
-				character_item.currentSpaceID = new_location;
-				character_item.equipped = false;
-
-				e.target.width(character_item.width * stage_wrapper.grid_cell_size);
-				e.target.height(character_item.height * stage_wrapper.grid_cell_size);
-
-				item_layer_wrapper.add_item_to(new_location, item_name);
-
-				e.target.position({
-					x: new_location[1] * stage_wrapper.grid_cell_size,
-					y: new_location[0] * stage_wrapper.grid_cell_size,
-				});
-
-				item_layer_wrapper.layer.batchDraw();
-			}
-		}
-		else {
-			e.target.position({
-				x: 0,
-				y: 0,
-			})
-
-		}
-	});
-
-	function equip(slot) {
-		const character_item = character_items[equip_item?.name()];
-		if (character_item?.slot === slot.name()) {
-			try {
-				if (update_equipped_status(equip_item.name(), true)) {
-					character_item.equipped = true;
-					item_layer_wrapper.remove_item_from(character_item.lastSpaceID);
-					item_layer_wrapper.remove_item_from(character_item.currentSpaceID);
-					character_layer.transfer_item(slot, equip_item);
-
-				}
-			}
-			catch (e) {
-				console.log("Did not update equipped status");
-			}
-
-		}
-		else {
-			console.log("Not saved");
-		}
-	}
-	//Check to see if the user has tried to equip something to the head.
-	//If so move the item to the other stage.
-	character_layer.stage.on('equip_head', function(e) {
-		equip(e.target);
-	});
-
-	character_layer.stage.on('equip_body', function(e) {
-		equip(e.target);
-	});
-
-	character_layer.stage.on('equip_main_hand', function(e) {
-		equip(e.target);
-	});
-
-	character_layer.stage.on('equip_off_hand', function(e) {
-		equip(e.target);
-	});
-
-	//If the user finishes the drag on the stage and not in a rectangle, don't equip it
-	character_layer.stage.on('mouseup', function(e) {
-		if (equip_item) {
-			equip_item = null;
-		}
-	});
-
-	// Used to store item wrapper classes. These are used in collision detection.
-	let character_items = {};
-
-
-	inventory.stage_wrapper = stage_wrapper;
-	inventory.item_layer_wrapper = item_layer_wrapper;
-
-	/**
-	 * Called when we want to redraw the grid
-	 *
-	 * @param {String} direction - vertical or horizontal
-	 */
-	function redraw(direction) {
-		stage_wrapper.draw(direction);
-		grid.draw(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size, stage_wrapper.stage.width(), stage_wrapper.stage.height());
-		item_layer_wrapper.create(stage_wrapper.rows, stage_wrapper.cols, stage_wrapper.grid_cell_size);
-
-		//Update the items on the new grid
-		Object.entries(item_layer_wrapper.old_spaces).sort().forEach((space, index) => {
-			//If the grid content was not false I.e it had a name
-			if (space[1]) {
-				let item_name = space[1];
-
-				// Work out the equivalent location on the new grid
-				let new_location = item_layer_wrapper.index_to_spaceid(index);
-
-				//Add it to the new grid
-				item_layer_wrapper.add_item_to(new_location, space[1]);
-
-				//Update the information in character_items
-				character_items[item_name].lastSpaceID = new_location;
-				character_items[item_name].currentSpaceID = new_location;
-
-				//Find the corresponding item on the konva layer
-				let layer_item = item_layer_wrapper.layer.findOne(node => node.name() === item_name.trim());
-
-				//Redraw it to the new position
-				layer_item.absolutePosition({
-					x: new_location[1] * stage_wrapper.grid_cell_size,
-					y: new_location[0] * stage_wrapper.grid_cell_size,
-				});
-			}
-		});
-		//Redraw the changed elements
-		item_layer_wrapper.layer.batchDraw();
-	}
-
-
-	//Block out any inventory space that was added as an extra
-	//Before placing any items
-	if (character_inventory_size !== stage_wrapper.display_size) {
-		const blocked = block_inventory_space("blocked", stage_wrapper.rows - 1, stage_wrapper.cols - 1, 1, 1, stage_wrapper.grid_cell_size, item_layer_wrapper);
-		character_items[blocked.name] = blocked;
-	}
-
-	// Sort the items into those that have an assigned space
-	// and those that don't. "-1" is the default value provided by
-	// the Item django model (see MUD/models.py)
-	let equipped_items = [];
-	let placed_items = [];
-	let unplaced_items = [];
-
-	item_data.forEach((item) => {
-		if (item.currentSpaceIndex === "-1") {
-			unplaced_items.push(item);
-		}
-		else {
-			placed_items.push(item);
-		}
-	});
-
-
-	//Place items that have a location first
-	placed_items.forEach((item) => {
-		const current_item_position = item_layer_wrapper.index_to_spaceid(item.currentSpaceIndex);
-		const last_item_position = item_layer_wrapper.index_to_spaceid(item.lastSpaceIndex);
-
-		let current_item = new_item(item, current_item_position, last_item_position, item_layer_wrapper, character_layer, stage_wrapper);
-		item_layer_wrapper.add_item_to(current_item_position, item.name);
-		character_items[item.name] = current_item;
-	});
-
-	//Unplaced items (those that don't have a location in the db) can fill in the empty spaces
-	unplaced_items.forEach((item) => {
-		let next_space = item_layer_wrapper.next_empty_space();
-		if (next_space !== "none") {
-			let current_item = new_item(item, next_space, next_space, item_layer_wrapper, character_layer, stage_wrapper);
-			item_layer_wrapper.add_item_to(next_space, item.name);
-			character_items[item.name] = current_item;
-
-			if (update_item_position(item.name, item_layer_wrapper.spaceid_to_index(next_space), item_layer_wrapper.spaceid_to_index(next_space))) {
-				console.log("saved");
-			}
-		}
-		else {
-			console.log("No more free spaces");
-		}
-	});
-
-
-	function post_data(data) {
-		fetch('/character/update_item', {
-			credentials: 'same-origin',
-			headers: {
-				'content-type': 'application/json; charset=utf-8',
-				'X-CSRFToken': csrf_token
-			},
-			method: 'post',
-			body: JSON.stringify({
-				'item_data': data,
-			}),
-		}).then((response) => {
-			if (response.status === 404) {
-				throw "Could not save";
-			}
-		});
-	}
-
-	/**
-	 * POSTs updated location information for item "name" to server
-	 *
-	 * @param {String} name - Name of the item
-	 * @param {String} lastSpaceIndex - The last space this item occupied
-	 * @param {String} currentSpaceIndex - The current space this item occupies
-	 */
-	function update_item_position(name, lastSpaceIndex, currentSpaceIndex) {
-		let data = {
-			'name': name,
-			'update': 'location',
-			'lastSpaceIndex': lastSpaceIndex,
-			'currentSpaceIndex': currentSpaceIndex,
-		};
-
-		try {
-			post_data(data);
-			return true;
-		}
-		catch (e) {
-			return false;
-		}
-	}// update_item_position()
-
-	function update_equipped_status(name, equipped_status) {
-		let data = {
-			'name': name,
-			'update': 'equipped',
-			'equipped': equipped_status,
-		};
-
-		try {
-			post_data(data);
-			return true;
-		}
-		catch (e) {
-			return false;
-		}
-	}
-
-	function update_equipped_location(name, equipped_status, lastSpaceIndex, currentSpaceIndex) {
-		let data = {
-			'name': name,
-			'update': 'both',
-			'equipped': equipped_status,
-			'lastSpaceIndex': lastSpaceIndex,
-			'currentSpaceIndex': currentSpaceIndex,
-		};
-
-		try {
-			post_data(data);
-			return true;
-		}
-		catch (e) {
-			return false;
-		}
-	}
-
-
-
-	/**
-	 * Handle the dragend on the konva layer level. This is responsible for making sure that items are not stacked on one another or placed
-	 * in a blocked inventory space
-	 *
-	 */
-	item_layer_wrapper.layer.on('dragend', (e) => {
-
-		// The item that was moved in the character_items object.
-		let moved_item = character_items[e.target.name()];
-
-		// Workout where the new location will be in the grid
-		let new_possible_location = Math.round(e.target.attrs.y / stage_wrapper.grid_cell_size) + "" + Math.round(e.target.attrs.x / stage_wrapper.grid_cell_size);
-
-		// If there is only one item, any drag is safe if the last and current locations are not the same, so save it.
-		if (item_layer_wrapper.layer.children.length === 1) {
-			if (moved_item.lastSpaceID !== new_possible_location) {
-				//If we don't have an equipped item, we are not transferring so update position
-				if (!equip_item) {
-					if (update_item_position(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location))) {
-
-						//Update in layer manager
-						item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
-						item_layer_wrapper.add_item_to(new_possible_location, moved_item.name);
-
-						//Update item
-						moved_item.lastSpaceID = moved_item.currentSpaceID;
-						moved_item.currentSpaceID = new_possible_location;
-
-						console.log("saved" + moved_item.currentSpaceID);
-					}
-				}
-			}
-		}
-		else { // We have more than one child on the layer
-
-			// Used to break out of a loop in the event of a collosion
-			let can_save = true;
-
-			item_layer_wrapper.layer.children.each(function(child) {
-				// If we are not comparing an item to itself
-				if (can_save && child.name() !== e.target.name()) {
-					//If the user tries to move an item onto another item or a blocked space
-					if (new_possible_location === character_items[child.name()].currentSpaceID) {
-						// Move it back to its previous location
-						e.target.to({
-							x: moved_item.lastSpaceID[1] * stage_wrapper.grid_cell_size,
-							y: moved_item.lastSpaceID[0] * stage_wrapper.grid_cell_size,
-							duration: 0.5,
-						});
-
-						// Break out of the loop and prevent saving the update
-						can_save = false;
-					}
-				}
-			});
-
-			// If we can save the new move and the item has moved from its last position in the grid
-			if (can_save && moved_item.lastSpaceID !== new_possible_location) {
-				//Save the changes
-
-				//If we don't have an equipped item, we are not transferring so update position
-				if (!equip_item) {
-					if (update_item_position(moved_item.name, item_layer_wrapper.spaceid_to_index(moved_item.lastSpaceID), item_layer_wrapper.spaceid_to_index(new_possible_location))) {
-
-						//Update layer manager
-						moved_item.currentSpaceID = new_possible_location;
-						item_layer_wrapper.remove_item_from(moved_item.lastSpaceID);
-						item_layer_wrapper.add_item_to(new_possible_location, moved_item.name);
-
-						//Update item
-						moved_item.lastSpaceID = moved_item.currentSpaceID;
-						moved_item.currentSpaceID = new_possible_location;
-
-						console.log("saved");
-					}
-				}
-			}
-		}
-	});
-
-	stage_wrapper.stage.add(grid.layer);
-	stage_wrapper.stage.add(item_layer_wrapper.layer);
-
-	inventory.redraw = redraw
-
-	return inventory;
+    let wrapper = {}
+    let inventory_stage = create_inventory_wrapper(direction, character_inventory_size);
+    let inventory = create_item_layer_wrapper(inventory_stage.rows, inventory_stage.cols, inventory_stage.grid_cell_size);
+    let character = create_character_stage();
+
+    let selected_konva_item;
+    let konva_item_to_unequip;
+
+
+    /**
+     * If the user double clicks an item in the inventory.
+     * Equip it, swapping it with any currently equipped item.
+     *
+     */
+    inventory.layer.on('toggle_equip', (e) => {
+        const slot = character[e.item_wrapper.slot];
+        const data = [];
+
+        //There is an item currently equipped
+        if (slot.children.length === 2) {
+            const konva_item = slot.children[0];
+            const item_object = character.items[konva_item.name()];
+            inventory.add_item(konva_item, item_object, e.item_wrapper.currentSpaceID);
+            character.unequip_item(konva_item.name());
+
+            data.push({
+                'name': item_object.name,
+                'equipped': item_object.equipped,
+                'lastSpaceIndex': inventory.spaceid_to_index(item_object.lastSpaceID),
+                'currentSpaceIndex': inventory.spaceid_to_index(item_object.currentSpaceID),
+            });
+        }
+
+        character.equip_item(slot, e.target, e.item_wrapper);
+        inventory.remove_item(e.target.name());
+
+        character.layer.batchDraw();
+        inventory.layer.batchDraw();
+
+        data.push({
+            'name': e.target.name(),
+            'equipped': e.item_wrapper.equipped,
+            'lastSpaceIndex': inventory.spaceid_to_index(e.item_wrapper.lastSpaceID),
+            'currentSpaceIndex': inventory.spaceid_to_index(e.item_wrapper.currentSpaceID),
+        });
+
+        write_to_db(data);
+    });
+
+    /**
+     * User double clicks an item that is equipped.
+     * Try to move it into the inventory if there
+     * is a free space
+     *
+     */
+    character.layer.on('toggle_equip', (e) => {
+        //Get next free inventory space
+        const spaceID = inventory.next_empty_space();
+        if (spaceID !== "none") {
+            inventory.add_item(e.target, e.item_wrapper, spaceID);
+            character.unequip_item(e.target.name());
+            inventory.layer.batchDraw();
+            character.layer.batchDraw();
+
+            const data = [{
+                'name': e.item_wrapper.name,
+                'equipped': e.item_wrapper.equipped,
+                'lastSpaceIndex': inventory.spaceid_to_index(e.item_wrapper.lastSpaceID),
+                'currentSpaceIndex': inventory.spaceid_to_index(e.item_wrapper.currentSpaceID),
+            }];
+
+            write_to_db(data);
+
+        }
+    });
+
+    /*
+    * Fired when an item moves locations in the inventory
+    */
+    inventory.layer.on('update', (e) => {
+        write_to_db(e.data);
+    });
+
+    /*
+    * ****** DRAG TO EQUIP
+    * These functions allow the user to "drag" and item from the inventory
+    * to an equipment slot on the character canvas.
+    */
+
+    /* This is fired when a drag does not finish in either another inventory slot
+     * or on top of another item.
+     */
+    inventory.layer.on('unfinished_drag', (e) => {
+        const item_object = inventory.items[e.target.name()];
+        item_object.move_to(item_object.currentSpaceID);
+        selected_konva_item = null;
+    });
+
+    /* This is fired when a dragmove moves off the top of the inventory stage.
+     * We keep track of the item being dragged as the user may want to equip it.
+     */
+    inventory.layer.on('select', (e) => {
+        selected_konva_item = e.target;
+    });
+
+    /* This is fired when a dragmove moves back onto the inventory stage
+     * after being dragged off.
+     * We stop keeping track of the item being dragged.
+     */
+    inventory.layer.on('deselect', (e) => {
+        selected_konva_item = null;
+    });
+
+
+    /**
+     * Attempts to move an item from the inventory into an equipment slot.
+     * If an item is already equipped, the two items swap places.
+     *
+     * @param {Konva Group} slot - The group to add the item to
+     * @param {Konva Node} currently_equipped_item - The image that is currently equipped
+     */
+    function equip_selected_item(slot, currently_equipped_item) {
+        //If we have a selected item from the inventory
+        if (selected_konva_item) {
+            const item_object = inventory.items[selected_konva_item.name()];
+            //If the item's slot type and the slot clicked on match
+            if (slot.name() === item_object.slot) {
+                //Data to write to the database
+                const data = [];
+
+                //If we have an equipped item already, we need to swap with it
+                if (currently_equipped_item !== "none") {
+                    const equipped_object = character.items[currently_equipped_item.name()];
+
+                    inventory.add_item(currently_equipped_item, equipped_object, item_object.currentSpaceID);
+                    character.unequip_item(currently_equipped_item.name());
+
+                    data.push({
+                        'name': equipped_object.name,
+                        'equipped': equipped_object.equipped,
+                        'lastSpaceIndex': inventory.spaceid_to_index(equipped_object.lastSpaceID),
+                        'currentSpaceIndex': inventory.spaceid_to_index(equipped_object.currentSpaceID),
+                    });
+                }
+
+                character.equip_item(slot, selected_konva_item, item_object);
+                inventory.remove_item(item_object.name);
+
+                character.layer.batchDraw();
+                inventory.layer.batchDraw();
+
+                data.push(
+                    {
+                        'name': item_object.name,
+                        'equipped': item_object.equipped,
+                        'lastSpaceIndex': inventory.spaceid_to_index(item_object.lastSpaceID),
+                        'currentSpaceIndex': inventory.spaceid_to_index(item_object.currentSpaceID),
+                    },
+                );
+
+                try {
+                    write_to_db(data);
+                }
+                catch (e) {
+                    console.error(e);
+                }
+
+            }
+
+        }
+        selected_konva_item = null;
+    };
+
+
+
+    /**
+     * On any mouse up event on the character stage, set the selected_item
+     * back to null. The item will have already been swapped at this point
+     * or the mouse up means the user did not drag it to an equipment slot.
+     *
+     */
+    character.stage.on('mouseup touchend', (e) => {
+        selected_konva_item = null;
+    });
+
+
+    /**
+     * The various "equip_" events are fired from the Konva groups
+     * in character_stage.js. These are fired on mouseup touchend on said groups
+     *
+     * The e.target will contain the Konva group object
+     * e.currently_equipped will contain the Konva node of the item equipped
+     * or the string "none" if no item is currently equipped.
+     */
+    character.layer.on('equip_body', (e) => {
+        equip_selected_item(e.target, e.currently_equipped);
+    });
+
+    character.layer.on('equip_head', (e) => {
+        equip_selected_item(e.target, e.currently_equipped);
+    });
+
+    character.layer.on('equip_main_hand', (e) => {
+        equip_selected_item(e.target, e.currently_equipped);
+    });
+
+    character.layer.on('equip_off_hand', (e) => {
+        equip_selected_item(e.target, e.currently_equipped);
+    });
+
+    /*
+        * ****** END OF DRAG TO EQUIP
+    */
+
+
+
+    /**
+     * If the user starts to drag an item off the bottom of the character stage
+     * keep track of it as they may want to unequip it.
+     *
+     */
+    character.layer.on('unequip', (e) => {
+        konva_item_to_unequip = e.target;
+    });
+
+    /**
+     * If the user drags an item back onto the character stage after dragging it off
+     * stop tracking the item.
+     *
+     */
+    character.layer.on('cancel_unequip', (e) => {
+        konva_item_to_unequip = null;
+    });
+
+    inventory_stage.stage.on('unequip', (e) => {
+        //If we are ending an unequip item drag
+        if (konva_item_to_unequip) {
+            const data = [];
+            //It's not an empty space, swap the items
+            const item = inventory.get_item_at_location(e.spaceID);
+            if (item) {
+                const inventory_object = inventory.items[inventory.get_item_at_location(e.spaceID)];
+                const inventory_konva_object = inventory_object.layer.findOne(node => { return node.name() === inventory_object.name });
+                const slot = character[inventory_object.slot];
+
+                character.equip_item(slot, inventory_konva_object, inventory_object);
+                inventory.remove_item(inventory_object.name);
+
+                data.push({
+                    'name': inventory_object.name,
+                    'equipped': inventory_object.equipped,
+                    'lastSpaceIndex': inventory.spaceid_to_index(inventory_object.lastSpaceID),
+                    'currentSpaceIndex': inventory.spaceid_to_index(inventory_object.currentSpaceID),
+                });
+            }
+
+            const item_object = character.items[konva_item_to_unequip.name()];
+            inventory.add_item(
+                konva_item_to_unequip,
+                item_object,
+                e.spaceID
+            );
+            character.unequip_item(konva_item_to_unequip.name());
+
+            data.push({
+                'name': item_object.name,
+                'equipped': item_object.equipped,
+                'lastSpaceIndex': inventory.spaceid_to_index(e.spaceID),
+                'currentSpaceIndex': inventory.spaceid_to_index(e.spaceID),
+            });
+            write_to_db(data);
+        }
+        konva_item_to_unequip = null;
+    });
+
+
+    /**
+     * Writes data to the database. This function makes the following assumptions:
+     *    1.) Data is an array of objects
+     *    2.) Each object has at least one property of 'name'. This is the name of an    item.
+     *
+     *   3.) Any further property of the object corresponds directly to a property of an item in the database.
+     *
+     *
+     * @param {Array} data        - Objects to write to the database
+     * @throws {"Could not save"} - If the database responds with anything but 200
+     * @throws {"Expected Array"} - data is not an array
+     */
+    function write_to_db(data) {
+        if (Array.isArray(data)) {
+            fetch('/character/update_item', {
+                credentials: 'same-origin',
+                headers: {
+                    'content-type': 'application/json; charset=utf-8',
+                    'X-CSRFToken': csrf_token
+                },
+                method: 'post',
+                body: JSON.stringify({
+                    'item_data': data,
+                }),
+            }).then((response) => {
+                if (response.status !== 200) {
+                    throw "Could not save";
+                }
+            });
+        } else {
+            throw `Expected Array got ${typeof data}`
+        }
+    }
+
+    /**
+     * Places items into their appropriate slots on appropriate layer when the page is first loaded.
+     */
+    function load_items() {
+        //Block out any inventory space that was added as an extra
+        //Before placing any items
+        if (character_inventory_size !== inventory_stage.display_size) {
+            const blocked = inventory.block_space((inventory_stage.rows - 1) + "" + (inventory_stage.cols - 1));
+            items[blocked.name] = blocked;
+        }
+
+        //Sort items into those that are equipped
+        //Those that are unequipped and have location data
+        //Those that are unequipped and have no location data
+        let items_to_equip = [];
+        let placed_items = [];
+        let unplaced_items = [];
+
+        item_data.forEach((item) => {
+            if (item.equipped) {
+                items_to_equip.push(item);
+            }
+            else if (item.currentSpaceIndex !== "-1") {
+                placed_items.push(item);
+            }
+            else {
+                unplaced_items.push(item);
+            }
+        });
+
+        //Place items that have a location first
+        placed_items.forEach((item) => {
+            try {
+                inventory.load_item(item);
+            }
+            catch (e) {
+                console.error(e);
+            }
+        });
+
+        //Place items that do not have a location next
+        unplaced_items.forEach((item) => {
+            try {
+                inventory.load_item(item);
+                const data = [{
+                    'name': item.name,
+                    'lastSpaceIndex': inventory.spaceid_to_index(inventory.items[item.name].lastSpaceID),
+                    'currentSpaceIndex': inventory.spaceid_to_index(inventory.items[item.name].currentSpaceID),
+                }];
+                write_to_db(data);
+            }
+            catch (e) {
+                console.error(e);
+            }
+        });
+
+        items_to_equip.forEach((item) => {
+            character.load_item(item);
+        });
+    };
+
+    /**
+     * Redraws the inventory grid and places items in their equivalent positions
+     *
+     * @param {String} direction - vertical or horizontal
+     */
+    function redraw(direction) {
+        inventory_stage.draw(direction);
+        inventory.create(inventory_stage.rows, inventory_stage.cols, inventory_stage.grid_cell_size);
+
+        //Update the items on the new grid
+        Object.entries(inventory.old_spaces).sort().forEach((space, index) => {
+            //If the grid content was not false I.e it had a name
+            if (space[1]) {
+                let item_name = space[1];
+
+                // Work out the equivalent location on the new grid
+                let new_location = inventory.index_to_spaceid(index);
+
+                //Add it to the new grid
+                inventory.add_item_to(new_location, space[1]);
+
+                //Update the information in items
+                items[item_name].lastSpaceID = new_location;
+                items[item_name].currentSpaceID = new_location;
+
+                //Find the corresponding item on the konva layer
+                let layer_item = inventory.layer.findOne(node => node.name() === item_name.trim());
+
+                //Redraw it to the new position
+                layer_item.absolutePosition({
+                    x: new_location[1] * inventory_stage.grid_cell_size,
+                    y: new_location[0] * inventory_stage.grid_cell_size,
+                });
+            }
+        });
+        //Redraw the changed elements
+        inventory.layer.batchDraw();
+    }
+
+    load_items();
+
+    inventory_stage.stage.add(inventory.layer);
+    wrapper.redraw = redraw
+
+    return wrapper;
 }
 
