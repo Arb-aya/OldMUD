@@ -9,7 +9,6 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
     let layer;
     let spaces = {};
     let old_spaces = {};
-    let blocked_spaces = 0;
     let items = {};
 
     function create(rows, cols) {
@@ -238,7 +237,6 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
      */
     wrapper.block_space = function(spaceID, width = 1, height = 1) {
         wrapper.spaces[spaceID] = "blocked";
-        wrapper.blocked_spaces++;
 
         let blocked_space = {};
         blocked_space.lastSpaceID = spaceID;
@@ -262,7 +260,6 @@ function create_item_layer_wrapper(rows, cols, cell_size) {
         return blocked_space;
     }
 
-    wrapper.blocked_spaces = blocked_spaces;
     wrapper.layer = layer;
     wrapper.create = create;
     wrapper.items = items;
