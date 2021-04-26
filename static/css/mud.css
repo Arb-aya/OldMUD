@@ -61,8 +61,25 @@ body {
   box-shadow: none;
 }
 
-.trait-container,
-.button-container {
+.btn-group {
+  position: sticky;
+  bottom: 10px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 1rem;
+  padding: 10px;
+  border: 2px solid #e69f00;
+}
+.btn-group .btn {
+  font-size: 1.5rem;
+  width: 100%;
+  background-color: #0072b2;
+  color: #FFFFFF;
+  border: 2px solid #e69f00;
+  margin-bottom: 4px;
+  border-radius: 1rem;
+}
+
+.trait-container {
   border: 0.3rem solid #e69f00;
   border-radius: 1rem;
   -webkit-box-shadow: 0px 10px 20px -3px rgba(0, 0, 0, 0.66);
@@ -73,8 +90,7 @@ body {
   padding-bottom: 1rem;
   margin-top: 3rem;
 }
-.trait-container legend,
-.button-container legend {
+.trait-container legend {
   width: 50%;
   border: 0.3rem solid #e69f00;
   border-radius: 1rem;
@@ -85,13 +101,6 @@ body {
   background-color: #0072b2;
   color: #FFFFFF;
   text-transform: uppercase;
-}
-
-.button-container {
-  background-color: #0072b2;
-  position: fixed;
-  top: 0;
-  padding: 2rem;
 }
 
 .trait {

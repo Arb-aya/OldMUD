@@ -52,9 +52,27 @@ body {
     box-shadow: none;
   }
 }
+.btn-group {
+  position: sticky;
+  bottom: 10px;
+  background-color: rgba(0,0,0,0.4);
+  border-radius: 1rem;
+  padding: 10px;
+  border: 2px solid base.$yellow;
 
-.trait-container,
-.button-container {
+  .btn {
+    font-size: 1.5rem;
+    width: 100%;
+    background-color: base.$blue-bg;
+    color: base.$blue-font-pair;
+    border: 2px solid base.$yellow;
+    margin-bottom: 4px;
+    border-radius: 1rem;
+  }
+
+}
+
+.trait-container {
   border: 0.3rem solid base.$yellow;
   border-radius: 1rem;
   @include prefixes.box-shadow(0px 10px 20px -3px rgba(0, 0, 0, 0.66));
@@ -76,14 +94,6 @@ body {
     text-transform: uppercase;
   }
 }
-
-.button-container {
-	background-color: base.$blue-bg;
-	position: fixed;
-	top: 0;
-	padding: 2rem;
-}
-
 
 .trait {
   margin-bottom: 2rem;
@@ -123,6 +133,6 @@ input[type="text"] {
   }
 }
 
-#inventory{
-	border: 1px solid #ddd;
+#inventory {
+  border: 1px solid #ddd;
 }
