@@ -96,44 +96,30 @@ def manage_inventory(request):
 @login_required
 def update_item(request):
     """
-    Updates an items position. Returns 200 or 404
-
+    Expects to recieve a list of dictionaries.
+    The dictionary needs to have one key of "name" that is the item to update.
+    The rest of the key,value pairs are presumed to be settings for the item.
     """
     character = get_character(request.user.username)
     if not character:
         return redirect(reverse("view_character"))
 
     if request.method == "POST":
-        new_item_data = json.load(request)["item_data"]
+        data = json.load(request)["item_data"]
 
-        itemsettings = ItemSettings.objects.get(
-            item__name=new_item_data["name"], character_id=character.id
-        )
+        for item in data:
+            itemsettings = ItemSettings.objects.get(
+                item__name=item["name"], character_id=character.id
+            )
 
-        if new_item_data["update"] == "both":
             if itemsettings:
-                itemsettings.currentSpaceIndex = new_item_data[
-                    "currentSpaceIndex"
-                ]
-                itemsettings.lastSpaceIndex = new_item_data["lastSpaceIndex"]
-                itemsettings.equipped = new_item_data["equipped"]
+                item.pop("name")
+                for attribute, value in item.items():
+                    setattr(itemsettings, attribute, value)
                 itemsettings.save()
-                return HttpResponse(200)
-        elif new_item_data["update"] == "location":
-            if itemsettings:
-                itemsettings.currentSpaceIndex = new_item_data[
-                    "currentSpaceIndex"
-                ]
-                itemsettings.lastSpaceIndex = new_item_data["lastSpaceIndex"]
-                itemsettings.save()
-                return HttpResponse(200)
-        else:
-            if itemsettings:
-                print(new_item_data["equipped"])
-                itemsettings.equipped = new_item_data["equipped"]
-                itemsettings.save()
-                return HttpResponse(200)
+            else:
+                return HttpResponse(404)
 
-        return HttpResponse(404)
+        return HttpResponse(200)
     else:
         return redirect(reverse("manage_inventory"))
