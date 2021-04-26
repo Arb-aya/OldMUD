@@ -12,144 +12,50 @@ Also allows the user to provide default fallbacks for all traits by:
     MIN_TRAIT_VALUE
     MAX_TRAIT_VALUE
     DEFAULT_TRAIT_VALUE
-
 """
 
-# --------------------------------- Points
-# -- MIN
-try:
-    MIN_POINTS_VALUE = settings.MIN_POINTS_VALUE
-except:
-    MIN_POINTS_VALUE = settings.MIN_TRAIT_VALUE
 
-# -- MAX
-try:
-    MAX_POINTS_VALUE = settings.MAX_POINTS_VALUE
-except:
-    MAX_POINTS_VALUE = settings.MAX_TRAIT_VALUE
-
-# -- DEFAULT
-try:
-    DEFAULT_POINTS_VALUE = settings.DEFAULT_POINTS_VALUE
-except:
-    DEFAULT_POINTS_VALUE = settings.DEFAULT_TRAIT_VALUE
+class SettingType:
+    default = "DEFAULT"
+    minimum = "MIN"
+    maximum = "MAX"
 
 
-# ---------------------------------- HP
-# -- MIN
-try:
-    MIN_HP_VALUE = settings.MIN_HP_VALUE
-except:
-    MIN_HP_VALUE = settings.MIN_TRAIT_VALUE
+game_settings_defaults_mapper = {
+    SettingType.default: settings.DEFAULT_TRAIT_VALUE,
+    SettingType.maximum: settings.MAX_TRAIT_VALUE,
+    SettingType.minimum: settings.MIN_TRAIT_VALUE,
+}
 
-# -- MAX
-try:
-    MAX_HP_VALUE = settings.MAX_HP_VALUE
-except:
-    MAX_HP_VALUE = settings.MAX_TRAIT_VALUE
+def get_game_setting(value, setting_type):
+    return getattr(settings, value, None) or game_settings_defaults_mapper[setting_type]
 
-# -- DEFAULT
-try:
-    DEFAULT_HP_VALUE = settings.DEFAULT_HP_VALUE
-except:
-    DEFAULT_HP_VALUE = settings.DEFAULT_TRAIT_VALUE
+DEFAULT_POINTS_VALUE = get_game_setting("DEFAULT_POINTS_VALUE", SettingType.default)
+MIN_POINTS_VALUE = get_game_setting("MIN_POINTS_VALUE", SettingType.minimum)
+MAX_POINTS_VALUE = get_game_setting("MAX_POINTS_VALUE", SettingType.maximum)
 
-# ---------------------------------- MP
-# -- MIN
-try:
-    MIN_MP_VALUE = settings.MIN_MP_VALUE
-except:
-    MIN_MP_VALUE = settings.MIN_TRAIT_VALUE
-
-# -- MAX
-try:
-    MAX_MP_VALUE = settings.MAX_MP_VALUE
-except:
-    MAX_MP_VALUE = settings.MAX_TRAIT_VALUE
-
-# -- DEFAULT
-try:
-    DEFAULT_MP_VALUE = settings.DEFAULT_MP_VALUE
-except:
-    DEFAULT_MP_VALUE = settings.DEFAULT_TRAIT_VALUE
-
-# --------------------------------- Strength
-# -- MIN
-try:
-    MIN_STRENGTH_VALUE = settings.MIN_STRENGTH_VALUE
-except:
-    MIN_STRENGTH_VALUE = settings.MIN_TRAIT_VALUE
-
-# -- MAX
-try:
-    MAX_STRENGTH_VALUE = settings.MAX_STRENGTH_VALUE
-except:
-    MAX_STRENGTH_VALUE = settings.MAX_TRAIT_VALUE
-
-# -- DEFAULT
-try:
-    DEFAULT_STRENGTH_VALUE = settings.DEFAULT_STRENGTH_VALUE
-except:
-    DEFAULT_STRENGTH_VALUE = settings.DEFAULT_TRAIT_VALUE
-
-# --------------------------------- Agility
-# -- MIN
-try:
-    MIN_AGILITY_VALUE = settings.MIN_AGILITY_VALUE
-except:
-    MIN_AGILITY_VALUE = settings.MIN_TRAIT_VALUE
-
-# -- MAX
-try:
-    MAX_AGILITY_VALUE = settings.MAX_AGILITY_VALUE
-except:
-    MAX_AGILITY_VALUE = settings.MAX_TRAIT_VALUE
-
-# -- DEFAULT
-try:
-    DEFAULT_AGILITY_VALUE = settings.DEFAULT_AGILITY_VALUE
-except:
-    DEFAULT_AGILITY_VALUE = settings.DEFAULT_TRAIT_VALUE
-
-# --------------------------------- Dexterity
-# -- MIN
-try:
-    MIN_DEXTERITY_VALUE = settings.MIN_DEXTERITY_VALUE
-except:
-    MIN_DEXTERITY_VALUE = settings.MIN_TRAIT_VALUE
-
-# -- MAX
-try:
-    MAX_DEXTERITY_VALUE = settings.MAX_DEXTERITY_VALUE
-except:
-    MAX_DEXTERITY_VALUE = settings.MAX_TRAIT_VALUE
-
-# -- DEFAULT
-try:
-    DEFAULT_DEXTERITY_VALUE = settings.DEFAULT_DEXTERITY_VALUE
-except:
-    DEFAULT_DEXTERITY_VALUE = settings.DEFAULT_TRAIT_VALUE
+DEFAULT_HP_VALUE = get_game_setting("DEFAULT_HP_VALUE", SettingType.default)
+MIN_HP_VALUE = get_game_setting("MIN_HP_VALUE", SettingType.minimum)
+MAX_HP_VALUE = get_game_setting("MAX_HP_VALUE", SettingType.maximum)
 
 
-# --------------------------------- INVENTORY
-# -- MIN
-try:
-    MIN_INVENTORY_SIZE = settings.MIN_INVENTORY_SIZE
-except:
-    MIN_INVENTORY_SIZE = settings.MIN_TRAIT_VALUE
-
-# -- MAX
-try:
-     MAX_INVENTORY_SIZE = settings.MAX_INVENTORY_SIZE
-except:
-    MAX_INVENTORY_SIZE = settings.MAX_TRAIT_VALUE
-
-# -- DEFAULT
-try:
-    DEFAULT_INVENTORY_SIZE = settings.DEFAULT_INVENTORY_SIZE
-except:
-    DEFAULT_INVENTORY_SIZE = settings.DEFAULT_TRAIT_VALUE
+DEFAULT_MP_VALUE = get_game_setting("DEFAULT_MP_VALUE", SettingType.default)
+MIN_MP_VALUE = get_game_setting("MIN_MP_VALUE", SettingType.minimum)
+MAX_MP_VALUE = get_game_setting("MAX_MP_VALUE", SettingType.maximum)
 
 
+DEFAULT_STRENGTH_VALUE = get_game_setting("DEFAULT_STRENGTH_VALUE", SettingType.default)
+MIN_STRENGTH_VALUE = get_game_setting("MIN_STRENGTH_VALUE", SettingType.minimum)
+MAX_STRENGTH_VALUE = get_game_setting("MAX_STRENGTH_VALUE", SettingType.maximum)
 
+DEFAULT_AGILITY_VALUE = get_game_setting("DEFAULT_AGILITY_VALUE", SettingType.default)
+MIN_AGILITY_VALUE = get_game_setting("MIN_AGILITY_VALUE", SettingType.minimum)
+MAX_AGILITY_VALUE = get_game_setting("MAX_AGILITY_VALUE", SettingType.maximum)
 
+DEFAULT_DEXTERITY_VALUE = get_game_setting("DEFAULT_DEXTERITY_VALUE", SettingType.default)
+MIN_DEXTERITY_VALUE = get_game_setting("MIN_DEXTERITY_VALUE", SettingType.minimum)
+MAX_DEXTERITY_VALUE = get_game_setting("MAX_DEXTERITY_VALUE", SettingType.maximum)
+
+DEFAULT_INVENTORY_SIZE = get_game_setting("DEFAULT_INVENTORY_SIZE", SettingType.default)
+MIN_INVENTORY_SIZE = get_game_setting("MIN_INVENTORY_SIZE", SettingType.minimum)
+MAX_INVENTORY_SIZE = get_game_setting("MAX_INVENTORY_SIZE", SettingType.maximum)
