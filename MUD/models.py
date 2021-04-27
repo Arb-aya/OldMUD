@@ -81,6 +81,14 @@ class Character(models.Model):
         default=defaultValues.DEFAULT_POINTS_VALUE,
     )
 
+    gold = models.IntegerField(
+        validators=[
+            MinValueValidator(defaultValues.MIN_GOLD_VALUE),
+            MaxValueValidator(defaultValues.MAX_GOLD_VALUE),
+        ],
+        default=defaultValues.DEFAULT_GOLD_VALUE,
+    )
+
     hp = models.IntegerField(
         validators=[
             MinValueValidator(defaultValues.MIN_HP_VALUE),

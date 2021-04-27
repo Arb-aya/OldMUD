@@ -8,6 +8,25 @@ from .forms import EditCharacterForm, DisplayCharacterForm
 from .helpers import validate_character_form, get_character
 
 
+def view_items(request):
+    """
+    Displays all the items available to the user.
+    Filters out items that the user already owns
+
+    """
+    character = get_character(request.user.username)
+    character_items = list(character.items.values_list('item__name'))
+    #Flattens out the list of tuples from above
+    character_items_list = [value for tuple in character_items for value in tuple]
+    items = Item.objects.filter(~Q(name__in=character_items_list))
+    context = {
+        "items": items,
+        "character_gold": character.gold,
+        "character_items": character_items,
+    }
+    return render(request, "Item/index.html", context)
+
+
 @login_required
 def view_character(request):
     """

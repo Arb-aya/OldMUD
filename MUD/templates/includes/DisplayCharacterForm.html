@@ -2,9 +2,17 @@
   <!-- POINTS -->
   <fieldset class="row trait-container">
     <div class="col-12">
-      <legend id="PointsTitle" class="trait-title">Points</legend>
+      <legend id="PointsTitle" class="trait-title">What can I spend</legend>
+    <div class="col-12 trait">
+      <p id="HPTitle" class="trait-title">Points</p>
       <div class="input-group justify-content-center">
         {{character_form.points | as_crispy_field}}
+      </div>
+    </div>
+    <div class="col-12 trait">
+      <p id="GoldTitle" class="trait-title">Gold</p>
+      <div class="input-group justify-content-center">
+        {{ character_form.gold | as_crispy_field }}
       </div>
     </div>
   </fieldset>

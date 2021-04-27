@@ -17,6 +17,7 @@ class DisplayCharacterForm(ModelForm):
         exclude = ["id", "owner"]
         widgets = {
             "points": forms.TextInput,
+            "gold": forms.TextInput,
             "hp": forms.TextInput,
             "mp": forms.TextInput,
             "strength": forms.TextInput,
@@ -29,6 +30,9 @@ class DisplayCharacterForm(ModelForm):
 
         self.helper = FormHelper(self)
         self.helper.form_show_labels = False
+
+        self.fields["gold"].widget.attrs['readonly']=True
+        self.fields["gold"].widget.attrs['aria-labelledby']="GoldTitle"
 
         self.fields["points"].widget.attrs['readonly']=True
         self.fields["points"].widget.attrs['aria-labelledby']="PointsTitle"
