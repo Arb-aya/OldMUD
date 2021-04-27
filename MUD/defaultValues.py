@@ -30,6 +30,10 @@ game_settings_defaults_mapper = {
 def get_game_setting(value, setting_type):
     return getattr(settings, value, None) or game_settings_defaults_mapper[setting_type]
 
+DEFAULT_GOLD_VALUE = get_game_setting("DEFAULT_GOLD_VALUE", SettingType.default)
+MIN_GOLD_VALUE = get_game_setting("MIN_GOLD_VALUE", SettingType.minimum)
+MAX_GOLD_VALUE = get_game_setting("MAX_GOLD_VALUE", SettingType.maximum)
+
 DEFAULT_POINTS_VALUE = get_game_setting("DEFAULT_POINTS_VALUE", SettingType.default)
 MIN_POINTS_VALUE = get_game_setting("MIN_POINTS_VALUE", SettingType.minimum)
 MAX_POINTS_VALUE = get_game_setting("MAX_POINTS_VALUE", SettingType.maximum)
