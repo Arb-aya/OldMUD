@@ -46,7 +46,7 @@ def view_character(request):
     character_form = DisplayCharacterForm(instance=character)
     context = {"character_form": character_form, "can_edit": can_edit}
 
-    return render(request, "MUD/index.html", context)
+    return render(request, "Character/index.html", context)
 
 
 @login_required
@@ -78,7 +78,7 @@ def edit_character(request):
 
     context = {"character_form": character_form, "respec": False}
 
-    return render(request, "MUD/editCharacter.html", context)
+    return render(request, "Character/editCharacter.html", context)
 
 
 @login_required
@@ -111,7 +111,7 @@ def manage_inventory(request):
 
     context = {"inventory_size": character.inventory_size, "items": item_data}
 
-    return render(request, "MUD/inventory.html", context)
+    return render(request, "Character/inventory.html", context)
 
 
 @login_required

@@ -1,0 +1,37 @@
+{% extends 'MUDBase.html' %}
+{% load static %}
+{% load socialaccount %}
+
+{% block extra_js %}
+	<script src="{% static 'js/konva.min.js'%}"></script>
+{% endblock %}
+
+
+{% block content %}
+<div class="row">
+
+  <div class="col-12 col-md-8 offset-md-2 text-center">
+    <h2 class="page-title">{{ user.username }}'s Character</h2>
+    {% if can_edit == True %}
+    <p>
+      <a class="link link-bottom-border" href="{% url 'edit_character'%}">
+	      Edit Character
+	      <i class="fas fa-edit icon"></i>
+      </a>
+    </p>
+    {% endif %}
+    <p>
+      <a class="link link-bottom-border" href="{% url 'manage_inventory'%}">
+	      Manage Inventory
+          <i class="fas fa-box-open icon"></i>
+      </a>
+    </p>
+  </div>
+
+  <div class="col-12 col-md-8 offset-md-2 form-container">
+		  {% include 'includes/DisplayCharacterForm.html' %}
+  </div>
+
+</div>
+{% endblock %}
+

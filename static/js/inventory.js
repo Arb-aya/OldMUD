@@ -372,7 +372,7 @@ function manage_inventory(direction) {
      */
     function write_to_db(data) {
         if (Array.isArray(data)) {
-            fetch('/character/update_item', {
+            fetch('/MUD/update_item', {
                 credentials: 'same-origin',
                 headers: {
                     'content-type': 'application/json; charset=utf-8',
@@ -489,6 +489,7 @@ function manage_inventory(direction) {
             }
         });
         //Redraw the changed elements
+        inventory_stage.stage.batchDraw();
         inventory.layer.batchDraw();
     }
 

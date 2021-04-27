@@ -1,0 +1,30 @@
+{% extends 'MUDBase.html' %} {% load static %} {% load socialaccount %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <h1 class="text-uppercase text-center mt-4">Item shop</h1>
+  </div>
+
+  {% if user.is_authenticated %}
+  <div class="row">
+    <div class="col-12">
+      <h2 id="balance" class="text-center">
+        <i class="fas fa-coins icon me-3 mb-2">
+          <p class="visually-hidden">Gold coins</p>
+        </i>
+        {{ character_gold }}
+      </h2>
+    </div>
+  </div>
+  {% endif %}
+
+  <div
+    class="row rows-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 g-lg-3 justify-content-center"
+  >
+    {% for item in items %} {% include 'includes/itemCard.html' %} {% endfor %}
+  </div>
+</div>
+{% csrf_token %} {% endblock %} {% block post_load_js %}
+<script src="{% static 'js/itemshop.js' %}" charset="utf-8"></script>
+{% endblock %}
