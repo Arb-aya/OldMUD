@@ -1,0 +1,57 @@
+<div class="col">
+  <div class="card item-card" style="width: 18rem">
+    <div class="{{item.rarity}}">
+      <div class="img-wrapper">
+        <img
+          src="{{MEDIA_URL}}{{item.image}}"
+          class="card-img-top"
+          alt="{{item.name}}"
+        />
+      </div>
+    </div>
+
+    <div class="card-body">
+      <h5 class="card-title">{{item.name}}</h5>
+      <p class="card-text">{{item.description}}</p>
+    </div>
+
+    <div class="card-body">
+      <table class="table table-hover table-borderless p-4">
+        <tbody>
+          <tr scope="row">
+            <td class="text-start">
+              <strong> Slot: </strong>
+            </td>
+            <td class="text-end">{{item.get_slot_display}}</td>
+          </tr>
+          <tr scope="row">
+            <td class="text-start">
+              <strong> Item Type: </strong>
+            </td>
+            <td class="text-end">{{item.get_item_type_display}}</td>
+          </tr>
+          <tr scope="row">
+            <td class="text-start">
+              <strong> Rarity: </strong>
+            </td>
+            <td class="text-end">
+              {{item.get_rarity_display}}
+            </td>
+          </tr>
+          <tr scope="row">
+            <td class="text-start">
+              <strong> Cost: </strong>
+            </td>
+            <td id="{{item.name}}Cost" class="text-end">
+              {{item.cost}} Gold coin{%if item.cost > 1 %}s{% endif %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-footer">
+        <button id="{{item.name}}" class="btn">Buy</button>
+    </div>
+  </div>
+</div>

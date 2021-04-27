@@ -1,4 +1,5 @@
 from django.core.serializers import serialize
+from django.db.models import Q
 from django.shortcuts import render, reverse, redirect, HttpResponse
 from django.contrib.auth.decorators import login_required
 import json
@@ -25,6 +26,30 @@ def view_items(request):
         "character_items": character_items,
     }
     return render(request, "Item/index.html", context)
+
+
+@login_required
+def buy_item(request):
+    """
+    Attempts to buy an item for a character. Succeeds if the character
+    has enough gold and doesn't already own the item
+
+    """
+    if request.method == "GET":
+        return redirect(reverse("view_character"))
+
+    item_name = json.load(request)["item_name"]
+    item = Item.objects.get(name=item_name)
+    character = get_character(request.user.username)
+
+    obj, created = ItemSettings.objects.get_or_create(
+        character=character, item=item
+    )
+
+    if created:
+        return HttpResponse()
+
+    return HttpResponse(status=403)
 
 
 @login_required
@@ -139,7 +164,7 @@ def update_item(request):
                     setattr(itemsettings, attribute, value)
                 itemsettings.save()
             else:
-                return HttpResponse(404)
+                return HttpResponse(status=404)
 
         return HttpResponse(200)
     else:
