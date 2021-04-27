@@ -99,7 +99,9 @@ def manage_inventory(request):
     item_data = list(
         Item.objects.filter(pk__in=item_ids)
         .order_by("id")
-        .values("name", "image", "item_type", "slot", "width", "height")
+        .values(
+            "name", "image", "item_type", "slot", "width", "height", "rarity"
+        )
     )
 
     for index, item in enumerate(item_data):

@@ -30,6 +30,24 @@ export function new_item(item, current_item_position, last_item_position, layer,
 
     let item_wrapper = {};
 
+    let bg_color;'#0072b2';
+
+    switch(item.rarity){
+        case 'unusual':
+            bg_color = '#2e8b57';
+            break;
+        case 'rare':
+            bg_color = '#8b008b';
+            break;
+
+        case 'epic':
+            bg_color = '#ffd700';
+            break;
+
+        case 'common':
+        default:
+            bg_color = '#0072b2';
+   }
     // Space IDs are IDs that describe one cell in the grid. For example, 00 is the first cell (top left).
     // We keep track of the last space occupied by an item as well as the current one.
     item_wrapper.lastSpaceID = last_item_position;
@@ -52,6 +70,7 @@ export function new_item(item, current_item_position, last_item_position, layer,
         image.setAttrs({
             x: current_item_position[1] * item_wrapper.cell_size,
             y: current_item_position[0] * item_wrapper.cell_size,
+            fill: bg_color,
             width: item_wrapper.width * item_wrapper.cell_size,
             height: item_wrapper.height * item_wrapper.cell_size,
             draggable: true,
