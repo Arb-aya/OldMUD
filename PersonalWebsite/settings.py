@@ -56,7 +56,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 SITE_ID = 2
 
 LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/character"
+LOGIN_REDIRECT_URL = "/MUD"
 SOCIALACCOUNT_PROVIDERS = {
         'twitch':{
             'SCOPE':['user_read']
