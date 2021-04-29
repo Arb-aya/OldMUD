@@ -1,9 +1,8 @@
 {% extends 'MUDBase.html' %} {% load static %} {% load socialaccount %}
-
 {% block content %}
 <div class="row">
   <div class="col-12">
-    <h1 class="text-uppercase text-center mt-4">Item shop</h1>
+    <h1 class="text-uppercase text-center my-4">Item shop</h1>
   </div>
 
   {% if user.is_authenticated %}
@@ -19,12 +18,14 @@
   </div>
   {% endif %}
 
-  <div
-    class="row rows-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 g-lg-3 justify-content-center"
-  >
-    {% for item in items %} {% include 'includes/itemCard.html' %} {% endfor %}
-  </div>
+  {% if items %}
+      <div
+        class="row rows-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 g-lg-3 justify-content-center"
+      >
+        {% for item in items %} {% include 'includes/itemCard.html' %} {% endfor %}
+      </div>
+  {% else %}
+      <h3 class="text-center mt-4">You have bought all available items.</h3>
+  {% endif %}
 </div>
-{% csrf_token %} {% endblock %} {% block post_load_js %}
-<script src="{% static 'js/itemshop.js' %}" charset="utf-8"></script>
-{% endblock %}
+{% csrf_token %} {% endblock %}
