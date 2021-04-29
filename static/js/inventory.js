@@ -82,8 +82,11 @@ function manage_inventory(direction) {
     //Used to hold a konva node to transfer from character to inventory via drag
     let konva_item_to_unequip;
 
+    //Used to show bootstrap tooltips
     const inventory_dom_el = document.getElementById('inventory');
     const character_dom_el = document.getElementById('character');
+
+
 
 
     /**
@@ -310,13 +313,12 @@ function manage_inventory(direction) {
     });
 
     //User has moused over an item, display the information in a bootstrap tooltip
-    character.layer.on('show_description', (e)=>{
-        character_dom_el.title=`${e.name}\n Slot: ${e.slot}\n Type: ${e.item_type}\n Rarity: ${e.rarity}`;
+    character.layer.on('show_description', (e) => {
+        character_dom_el.title = `${e.name}\n Slot: ${e.slot}\n Type: ${e.item_type}\n Rarity: ${e.rarity}`;
     });
 
-    inventory.layer.on('show_description', (e)=>{
-        console.log(e);
-        inventory_dom_el.title=`${e.name}\n Slot: ${e.slot}\n Type: ${e.item_type}\n Rarity: ${e.rarity}`;
+    inventory.layer.on('show_description', (e) => {
+        inventory_dom_el.title = `${e.name}\n Slot: ${e.slot}\n Type: ${e.item_type}\n Rarity: ${e.rarity}`;
     });
 
     /**
@@ -396,6 +398,8 @@ function manage_inventory(direction) {
                 }),
             }).then((response) => {
                 if (response.status !== 200) {
+                    const js_alert = new bootstrap.Toast(document.getElementById('js-alert'));
+                    js_alert.show();
                     throw "Could not save";
                 }
             });

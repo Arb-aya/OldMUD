@@ -87,12 +87,17 @@
     </main>
 
 <script type="text/javascript">
-  var toastElList = [].slice.call(document.querySelectorAll(".toast"));
-  var toastList = toastElList.map(function (toastEl) {
-    return new bootstrap.Toast(toastEl);
-  });
+    var toastElList = [].slice.call(document.querySelectorAll(".toast"));
+    var toastList = toastElList.map(function (toastEl) {
+        if(toastEl.id !== "js-alert")
+          return new bootstrap.Toast(toastEl);
+    });
 
-  toastList.forEach((toast) => toast.show());
+    function show_toasts(){
+      toastList.forEach((toast) => toast.show());
+    }
+
+    show_toasts();
 </script>
     {% block post_load_js %} {% endblock %}
   </body>
