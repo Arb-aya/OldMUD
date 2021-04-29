@@ -38,12 +38,4 @@
 {% block post_load_js %}
 {{ block.super }}
 <script src="{% static 'js/scrolling.js' %}" charset="utf-8"></script>
-<script type="text/javascript">
-  var toastElList = [].slice.call(document.querySelectorAll(".toast"));
-  var toastList = toastElList.map(function (toastEl) {
-    return new bootstrap.Toast(toastEl);
-  });
-
-  toastList.forEach((toast) => toast.show());
-</script>
 {% endblock %}
