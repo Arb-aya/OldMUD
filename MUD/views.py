@@ -1,13 +1,16 @@
 from django.core.serializers import serialize
-from django.db.models import Q
 from django.shortcuts import render, reverse, redirect, HttpResponse
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 import json
 
 from .models import Character, Item, ItemSettings
 from .forms import EditCharacterForm, DisplayCharacterForm
-from .helpers import validate_character_form, get_character
-
+from .helpers import (
+    validate_character_form,
+    get_character,
+    get_items_to_display,
+)
 
 def view_items(request):
     """
@@ -16,15 +19,17 @@ def view_items(request):
 
     """
     character = get_character(request.user.username)
-    character_items = list(character.items.values_list('item__name'))
-    #Flattens out the list of tuples from above
-    character_items_list = [value for tuple in character_items for value in tuple]
-    items = Item.objects.filter(~Q(name__in=character_items_list))
-    context = {
-        "items": items,
-        "character_gold": character.gold,
-        "character_items": character_items,
-    }
+    context = {}
+    items = None
+
+    if character:
+        character_items = list(character.items.values_list("item__name"))
+        items = get_items_to_display(character_items)
+        context["character_gold"] = character.gold,
+    else:
+        items = Item.objects.all()
+
+    context["items"] = items
     return render(request, "Item/index.html", context)
 
 
@@ -36,20 +41,32 @@ def buy_item(request):
 
     """
     if request.method == "GET":
-        return redirect(reverse("view_character"))
+        return redirect(reverse("view_items"))
 
-    item_name = json.load(request)["item_name"]
+    item_name = request.POST["item_name"]
     item = Item.objects.get(name=item_name)
     character = get_character(request.user.username)
 
-    obj, created = ItemSettings.objects.get_or_create(
-        character=character, item=item
-    )
+    if character.gold >= item.cost:
+        obj, created = ItemSettings.objects.get_or_create(
+            character=character, item=item
+        )
+        character.gold -= item.cost
+        character.save()
 
-    if created:
-        return HttpResponse()
+        if not created:
+            return HttpResponse(status=403)
 
-    return HttpResponse(status=403)
+    character_items = list(character.items.values_list("item__name"))
+    items = get_items_to_display(character_items)
+
+    context = {
+        "items": items,
+        "character_gold": character.gold,
+        "character_items": character_items,
+    }
+    messages.add_message(request, messages.SUCCESS, f"Bought {item_name}")
+    return render(request, "Item/index.html", context)
 
 
 @login_required
