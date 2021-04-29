@@ -1,5 +1,14 @@
 from django.core.exceptions import ObjectDoesNotExist
-from .models import Character
+from django.db.models import Q
+
+from .models import Character, Item
+
+
+def get_items_to_display(character):
+    character_items = list(character.items.values_list("item__name"))
+    character_items_list = [value for tuple in character_items for value in tuple]
+    items_excluding_character_items = Item.objects.filter(~Q(name__in=character_items_list))
+    return items_excluding_character_items
 
 def get_character(username):
     """

@@ -23,8 +23,7 @@ def view_items(request):
     items = None
 
     if character:
-        character_items = list(character.items.values_list("item__name"))
-        items = get_items_to_display(character_items)
+        items = get_items_to_display(character)
         context["character_gold"] = character.gold,
     else:
         items = Item.objects.all()
