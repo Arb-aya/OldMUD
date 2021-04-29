@@ -1,16 +1,15 @@
-from django.core.serializers import serialize
-from django.shortcuts import render, reverse, redirect, HttpResponse
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 import json
 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.serializers import serialize
+from django.shortcuts import HttpResponse, redirect, render, reverse
+
+from .forms import DisplayCharacterForm, EditCharacterForm
+from .helpers import (get_character, get_items_to_display,
+                      validate_character_form)
 from .models import Character, Item, ItemSettings
-from .forms import EditCharacterForm, DisplayCharacterForm
-from .helpers import (
-    validate_character_form,
-    get_character,
-    get_items_to_display,
-)
+
 
 def view_items(request):
     """
@@ -24,7 +23,7 @@ def view_items(request):
 
     if character:
         items = get_items_to_display(character)
-        context["character_gold"] = character.gold,
+        context["character_gold"] = character.gold
     else:
         items = Item.objects.all()
 
@@ -54,7 +53,15 @@ def buy_item(request):
         character.save()
 
         if not created:
+            messages.add_message(
+                request, messages.INFO, f"You already own {item_name}"
+            )
             return HttpResponse(status=403)
+    else:
+        messages.add_message(
+            request, messages.INFO, f"Not enough gold to buy {item_name}"
+        )
+        return HttpResponse(status=403)
 
     character_items = list(character.items.values_list("item__name"))
     items = get_items_to_display(character_items)
@@ -64,6 +71,7 @@ def buy_item(request):
         "character_gold": character.gold,
         "character_items": character_items,
     }
+
     messages.add_message(request, messages.SUCCESS, f"Bought {item_name}")
     return render(request, "Item/index.html", context)
 
@@ -141,7 +149,13 @@ def manage_inventory(request):
         Item.objects.filter(pk__in=item_ids)
         .order_by("id")
         .values(
-            "name", "image", "item_type", "slot", "width", "height", "rarity"
+            "name",
+            "image",
+            "item_type",
+            "slot",
+            "width",
+            "height",
+            "rarity",
         )
     )
 
@@ -150,7 +164,10 @@ def manage_inventory(request):
         item["currentSpaceIndex"] = character_items[index].currentSpaceIndex
         item["equipped"] = character_items[index].equipped
 
-    context = {"inventory_size": character.inventory_size, "items": item_data}
+    context = {
+        "inventory_size": character.inventory_size,
+        "items": item_data,
+    }
 
     return render(request, "Character/inventory.html", context)
 
