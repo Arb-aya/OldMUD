@@ -30,9 +30,9 @@ export function new_item(item, current_item_position, last_item_position, layer,
 
     let item_wrapper = {};
 
-    let bg_color;'#0072b2';
+    let bg_color; '#0072b2';
 
-    switch(item.rarity){
+    switch (item.rarity) {
         case 'unusual':
             bg_color = '#2e8b57';
             break;
@@ -47,7 +47,7 @@ export function new_item(item, current_item_position, last_item_position, layer,
         case 'common':
         default:
             bg_color = '#0072b2';
-   }
+    }
     // Space IDs are IDs that describe one cell in the grid. For example, 00 is the first cell (top left).
     // We keep track of the last space occupied by an item as well as the current one.
     item_wrapper.lastSpaceID = last_item_position;
@@ -76,6 +76,11 @@ export function new_item(item, current_item_position, last_item_position, layer,
             draggable: true,
             name: item.name,
         });//setAttrs
+
+        //If the user hovers over or touches (on touch screens) an item, display information about it
+        image.on('mouseenter touchstart', (e) => {
+            image.fire('show_description',{'name':item.name,'item_type':item.item_type, 'slot':item.slot,'rarity':item.rarity},true);
+        });
 
         //*
         //code for drag and drop snap to grid taken from:

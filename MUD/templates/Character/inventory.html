@@ -9,17 +9,8 @@
 
 {% block content %}
 <div class="row">
-
   <div class="col-12 text-center">
     <h2 class="page-title">{{ user.username }}'s Character</h2>
-    {% if can_edit == True %}
-    <p>
-      <a class="edit-link" href="{% url 'edit_character'%}">
-	      Edit Character
-	      <i class="fas fa-edit icon"></i>
-      </a>
-    </p>
-    {% endif %}
 	{{ items|json_script:"itemdata" }}
 	{{ inventory_size|json_script:"inventory_size"}}
 	{{ MEDIA_URL|json_script:"media_url" }}
@@ -36,7 +27,7 @@
   </div>
 
   <div class="col-12 d-flex justify-content-center">
-	  <div id="inventory">
+	  <div id="inventory" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="">
 	  </div>
   </div>
 
@@ -60,4 +51,12 @@
 
 	<script src="{% static 'js/inventory.js' %}" type="module" charset="utf-8">
 	</script>
+
+    <script>
+        //Show bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    </script>
 {% endblock %}

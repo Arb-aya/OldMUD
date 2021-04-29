@@ -82,6 +82,9 @@ function manage_inventory(direction) {
     //Used to hold a konva node to transfer from character to inventory via drag
     let konva_item_to_unequip;
 
+    const inventory_dom_el = document.getElementById('inventory');
+    const character_dom_el = document.getElementById('character');
+
 
     /**
      * If the user double clicks an item in the inventory.
@@ -306,10 +309,19 @@ function manage_inventory(direction) {
         konva_item_to_unequip = null;
     });
 
+    //User has moused over an item, display the information in a bootstrap tooltip
+    character.layer.on('show_description', (e)=>{
+        character_dom_el.title=`${e.name}\n Slot: ${e.slot}\n Type: ${e.item_type}\n Rarity: ${e.rarity}`;
+    });
+
+    inventory.layer.on('show_description', (e)=>{
+        console.log(e);
+        inventory_dom_el.title=`${e.name}\n Slot: ${e.slot}\n Type: ${e.item_type}\n Rarity: ${e.rarity}`;
+    });
 
     /**
      * Called when a mouse up event happens on the inventory stage.
-     * This checks to see if a konva node has been stored in 
+     * This checks to see if a konva node has been stored in
      * konva_item_to_unequip as a flag that the user wants to unequip
      * an item and store it inventory.
      *
