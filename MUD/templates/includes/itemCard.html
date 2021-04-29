@@ -51,7 +51,13 @@
     </div>
 
     <div class="card-footer">
-        <button id="{{item.name}}" class="btn">Buy</button>
+        {% if user.is_authenticated %}
+        <form method="POST" action="{%url 'buy_item'%}">
+        {% csrf_token %}
+        <input type="hidden" name="item_name" value="{{item.name}}">
+        <button id="{{item.name}}" class="btn" type="submit">Buy</button>
+        </form>
+        {% endif %}
     </div>
   </div>
 </div>
