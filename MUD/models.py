@@ -16,9 +16,13 @@ class Item(models.Model):
         upload_to="items", max_length=1204, null=True, blank=True
     )
 
-    item_type = models.CharField(default=ItemType.SHIELD,choices=ItemType.choices, max_length=50)
+    item_type = models.CharField(
+        default=ItemType.SHIELD, choices=ItemType.choices, max_length=50
+    )
 
-    slot = models.CharField(default=Slot.OFF_HAND, choices=Slot.choices , max_length=50)
+    slot = models.CharField(
+        default=Slot.OFF_HAND, choices=Slot.choices, max_length=50
+    )
 
     width = models.IntegerField(default=1, validators=[MinValueValidator(1)])
 
@@ -28,16 +32,29 @@ class Item(models.Model):
 
     cost = models.DecimalField(max_digits=4, decimal_places=0)
 
-    rarity = models.CharField(default=ItemRarity.COMMON, choices=ItemRarity.choices, max_length=50)
+    rarity = models.CharField(
+        default=ItemRarity.COMMON, choices=ItemRarity.choices, max_length=50
+    )
 
     def __str__(self):
         return f"{self.id} - {self.name} "
 
+
 class ItemSettings(models.Model):
 
-    character = models.ForeignKey('Character', on_delete=models.CASCADE, related_name='items', related_query_name="items")
+    character = models.ForeignKey(
+        "Character",
+        on_delete=models.CASCADE,
+        related_name="items",
+        related_query_name="items",
+    )
 
-    item = models.ForeignKey('Item', on_delete=models.CASCADE, related_name='settings', related_query_name="settings")
+    item = models.ForeignKey(
+        "Item",
+        on_delete=models.CASCADE,
+        related_name="settings",
+        related_query_name="settings",
+    )
 
     lastSpaceIndex = models.CharField(default="-1", max_length=2)
 
@@ -49,11 +66,12 @@ class ItemSettings(models.Model):
         return f" {self.character.owner.username} - {self.item.name} - {self.equipped}"
 
 
-
 class Character(models.Model):
     """ Represents each chatter's character """
 
-    owner = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="owner")
+    owner = models.ForeignKey(
+        get_user_model(), on_delete=models.CASCADE, related_name="owner"
+    )
 
     inventory_size = models.IntegerField(
         validators=[
