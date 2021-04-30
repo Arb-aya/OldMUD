@@ -13,6 +13,14 @@ body {
   height: 2px;
 }
 
+.toast {
+  color: #000000;
+}
+
+.navbar {
+  border: 2px solid #000000;
+}
+
 body {
   background-color: #0072b2;
   color: #FFFFFF;
@@ -21,6 +29,13 @@ body {
 .icon {
   color: #e69f00;
   margin-left: 0.2rem;
+}
+
+#balance {
+  border: 2px solid #E69F00;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.125);
+  padding: 1rem;
 }
 
 .page-title {

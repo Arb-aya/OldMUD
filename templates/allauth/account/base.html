@@ -1,25 +1,6 @@
+{% extends 'base.html' %}
 {% load static %}
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>{% block head_title %}{% endblock %}</title>
-    {% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/base.css' %}" />
-    {% endblock %}
-  </head>
-  <body>
-    {% block body %}
-    {% if messages %}
-    <div>
-      <strong>Messages:</strong>
-      <ul>
-        {% for message in messages %}
-        <li>{{message}}</li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
-
     <div>
         <strong>Menu:</strong>
         <ul>
