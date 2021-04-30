@@ -18,12 +18,69 @@ body {
 }
 
 .navbar {
+  border-bottom: 2px solid #000000;
+}
+
+#navbarcontent .nav-link {
+  color: #000000;
+}
+
+.allauth-box {
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  flex-direction: column;
+  font-weight: bold;
+  align-items: center;
   border: 2px solid #000000;
+  border-radius: 10px;
+  width: 100%;
+  margin: 0 auto;
+  margin-top: 3rem;
+  padding: 2rem;
+}
+.allauth-box p a:nth-of-type(1) {
+  color: white;
+  text-decoration: none;
+  background-color: #000000;
+  padding: 0.1rem;
+  border-radius: 10px;
+  margin: 0 0.3rem;
+  padding: 0.2rem;
+}
+.allauth-box .btn {
+  background-color: #000000;
+  color: #FFFFFF;
+  font-weight: bold;
+}
+@media (min-width: 768px) {
+  .allauth-box {
+    width: 80%;
+  }
+}
+@media (min-width: 992px) {
+  .allauth-box {
+    width: 80%;
+  }
+}
+@media (min-width: 992px) {
+  .allauth-box {
+    width: 60%;
+  }
+}
+@media (min-width: 1200px) {
+  .allauth-box {
+    width: 40%;
+  }
+}
+
+.login {
+  padding-top: 0;
 }
 
 body {
   background-color: #0072b2;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .icon {
@@ -48,7 +105,7 @@ body {
   position: relative;
   margin-top: 0.2rem;
   padding: 0.2rem;
-  color: #FFFFFF;
+  color: #ffffff;
   text-decoration: none;
 }
 
@@ -87,7 +144,7 @@ body {
 .header-text {
   width: 100%;
   text-align: center;
-  color: #FFFFFF;
+  color: #ffffff;
   text-transform: uppercase;
   font-weight: bold;
 }
@@ -118,7 +175,7 @@ body {
   font-size: 1.5rem;
   width: 100%;
   background-color: #0072b2;
-  color: #FFFFFF;
+  color: #ffffff;
   border: 2px solid #e69f00;
   margin-bottom: 4px;
   border-radius: 1rem;
@@ -144,7 +201,7 @@ body {
   right: -25%;
   box-sizing: border-box;
   background-color: #0072b2;
-  color: #FFFFFF;
+  color: #ffffff;
   text-transform: uppercase;
 }
 
@@ -235,7 +292,7 @@ input[type=text] {
   border-radius: 1rem;
   outline: 0 none;
   text-align: center;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   color: #0072b2;
   font-weight: bold;
   transition: all 0.5s ease;
@@ -243,7 +300,7 @@ input[type=text] {
 input[type=text]:focus {
   border: 2px solid #e69f00;
   background-color: #0072b2;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 #inventory {
