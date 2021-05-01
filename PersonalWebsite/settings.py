@@ -169,7 +169,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 if 'USE_AWS' in os.environ:
     AWS_S3_OBJECT_PARAMETERS = {
-            'expires': 'Thu, 31 Dec 2099 20:00:00 GMT',
+            'Expires': 'Thu, 31 Dec 2099 20:00:00 GMT',
             'CacheControl': 'max-age=96408000',
             }
 
