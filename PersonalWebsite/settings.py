@@ -124,7 +124,7 @@ if development:
     }
 else:
     DATABASES = {
-        "default": dj_database_url.parse("postgres://wqltsdcewulqqa:d5f73ba525e51a5098b293775cf9d760c2b76edf1a9d5692787ba3bad84f8600@ec2-34-254-69-72.eu-west-1.compute.amazonaws.com:5432/de6p57972mccqk")
+        "default": dj_database_url.parse(os.environ.get("DATABASE_URL",""))
     }
 
 # Password validation
