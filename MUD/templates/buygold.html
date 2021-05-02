@@ -1,0 +1,26 @@
+{% extends 'MUDBase.html' %}
+
+{% block content%}
+<div class="row justify-content-around pt-lg-5">
+    <div class="col-12 col-md-8 col-lg-3 gold-container">
+        <h3> Small amount of gold </h3>
+        <img src="{{MEDIA_URL}}smallgold.png" alt="Small amount of gold">
+        <p> Pay <span class="price">£2.99</span> for <span class="price">10</span> gold coins </p>
+        <button class="btn"> Buy </button>
+    </div>
+
+    <div class="col-12 col-md-8 col-lg-3 gold-container">
+        <h3> Medium amount of gold </h3>
+        <img src="{{MEDIA_URL}}mediumgold.png" alt="Medium amount of gold">
+        <p> Pay <span class="price">£5.99</span> for <span class="price">30</span> gold coins </p>
+        <button class="btn"> Buy </button>
+    </div>
+
+    <div class="col-12 col-md-8 col-lg-3 gold-container">
+        <h3> Large amount of gold </h3>
+        <img src="{{MEDIA_URL}}largegold.png" alt="Large amount of gold">
+        <p> Pay <span class="price">£9.99</span> for <span class="price">100</span> gold coins </p>
+        <button class="btn"> Buy </button>
+    </div>
+</div>
+{% endblock %}

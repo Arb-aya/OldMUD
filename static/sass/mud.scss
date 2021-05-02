@@ -254,3 +254,34 @@ input[type="text"] {
 #inventory {
   border: 1px solid #ddd;
 }
+
+.gold-container{
+    text-align: center;
+    border: 3px solid base.$yellow;
+    border-radius: 10px;
+    background-color: rgba(0,0,0,0.4);
+    padding: 1rem 0;
+
+    img{
+        width: 50%;
+        height: auto;
+    }
+
+  .btn {
+    background-color: base.$blue-bg;
+    width: 50%;
+    color: base.$blue-font-pair;
+    border: 2px solid base.$yellow;
+    margin-bottom: 4px;
+    border-radius: 1rem;
+  }
+
+  p{
+      font-size: 1.2rem;
+  }
+}
+
+.price{
+    font-weight: bold;
+    color: base.$yellow;
+}

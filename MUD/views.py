@@ -11,6 +11,9 @@ from .helpers import (get_character, get_items_to_display,
 from .models import Character, Item, ItemSettings
 
 
+def view_shop(request):
+    return render(request, "buygold.html")
+
 def view_items(request):
     """
     Displays all the items available to the user.

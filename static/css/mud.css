@@ -25,6 +25,10 @@ body {
   color: #000000;
 }
 
+.nav-link {
+  margin-left: 1rem;
+}
+
 .allauth-box {
   display: flex;
   background-color: rgba(0, 0, 0, 0.2);
@@ -76,6 +80,11 @@ body {
 
 .login {
   padding-top: 0;
+}
+
+#siteLogo {
+  width: 75px;
+  height: auto;
 }
 
 body {
@@ -305,6 +314,34 @@ input[type=text]:focus {
 
 #inventory {
   border: 1px solid #ddd;
+}
+
+.gold-container {
+  text-align: center;
+  border: 3px solid #e69f00;
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 1rem 0;
+}
+.gold-container img {
+  width: 50%;
+  height: auto;
+}
+.gold-container .btn {
+  background-color: #0072b2;
+  width: 50%;
+  color: #ffffff;
+  border: 2px solid #e69f00;
+  margin-bottom: 4px;
+  border-radius: 1rem;
+}
+.gold-container p {
+  font-size: 1.2rem;
+}
+
+.price {
+  font-weight: bold;
+  color: #e69f00;
 }
 
 /*# sourceMappingURL=mud.css.map */
