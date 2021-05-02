@@ -5,8 +5,13 @@ from .models import Character, Item
 
 
 def get_items_to_display(character):
-    character_items = list(character.items.values_list("item__name"))
-    character_items_list = [value for tuple in character_items for value in tuple]
+    """
+    This function can be used to only display items to the user
+    that they do not already own.
+
+    :param character Object: Character Object that belongs to authenticated user
+    """
+    character_items = list(character.items.values_list("item__name",flat=True))
     items_excluding_character_items = Item.objects.filter(~Q(name__in=character_items_list))
     return items_excluding_character_items
 
@@ -14,6 +19,9 @@ def get_character(username):
     """
     Get character from database that belongs to username.
     Returns a blank object if not found
+
+    Used when we want to control what happens when the character doesn't
+    exist. Otherwise it is better to use get_object_or_404
 
     """
     try:
