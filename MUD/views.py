@@ -3,7 +3,7 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.serializers import serialize
-from django.shortcuts import HttpResponse, redirect, render, reverse
+from django.shortcuts import HttpResponse, redirect, render, reverse, get_object_or_404
 
 from .forms import DisplayCharacterForm, EditCharacterForm
 from .helpers import (get_character, get_items_to_display,
@@ -22,13 +22,39 @@ def view_items(request):
     items = None
 
     if character:
-        items = get_items_to_display(character)
+        character_items = character.items.values_list("item__name",flat=True)
+        context["character_items"] = character_items
         context["character_gold"] = character.gold
-    else:
-        items = Item.objects.all()
 
+    items = Item.objects.all()
     context["items"] = items
+
     return render(request, "Item/index.html", context)
+
+@login_required
+def sell_item(request):
+    """
+    Lets a user sell an item if they own it. For half of the buy price.
+
+    """
+    if request.method == "GET":
+        return redirect(reverse("view_items"))
+
+    character = get_character(request.user.username)
+    if character:
+        item_name = request.POST["item_name"]
+        if ItemSettings.objects.filter(character=character, item__name=item_name).exists():
+            character_item = ItemSettings.objects.get(character=character, item__name=item_name)
+            item_cost = get_object_or_404(Item,name=item_name).cost
+            refund = round(item_cost/2) if round(item_cost/2) > 0 else 1
+            character_item.delete()
+            character.gold += refund
+            character.save()
+            messages.add_message(request, messages.SUCCESS, f"Sold {item_name} for {refund} gold")
+            return redirect(reverse("view_items"))
+
+    messages.add_message(request, messages.WARNING, f"Couldn't sell {item_name}")
+    return redirect(reverse("view_items"))
 
 
 @login_required
@@ -42,35 +68,38 @@ def buy_item(request):
         return redirect(reverse("view_items"))
 
     item_name = request.POST["item_name"]
-    item = Item.objects.get(name=item_name)
-    character = get_character(request.user.username)
+    item = get_object_or_404(Item, name=item_name)
+    character = get_object_or_404(Character,owner__username = request.user.username)
+    context = {}
+    items = Item.objects.all()
 
+    context['items'] = items
+    context['character_gold'] = character.gold
+
+    character_items = character.items.values_list("item__name",flat=True)
+    context['character_items'] = character_items
     if character.gold >= item.cost:
         obj, created = ItemSettings.objects.get_or_create(
             character=character, item=item
         )
-        character.gold -= item.cost
-        character.save()
 
         if not created:
             messages.add_message(
                 request, messages.INFO, f"You already own {item_name}"
             )
-            return HttpResponse(status=403)
+            return render(request, "Item/index.html", context)
+
+        character.gold -= item.cost
+        context['character_gold'] = character.gold
+        character.save()
     else:
         messages.add_message(
             request, messages.INFO, f"Not enough gold to buy {item_name}"
         )
-        return HttpResponse(status=403)
+        return render(request, "Item/index.html", context)
 
-    character_items = list(character.items.values_list("item__name"))
-    items = get_items_to_display(character_items)
-
-    context = {
-        "items": items,
-        "character_gold": character.gold,
-        "character_items": character_items,
-    }
+    character_items = character.items.values_list("item__name",flat=True)
+    context['character_items'] = character_items
 
     messages.add_message(request, messages.SUCCESS, f"Bought {item_name}")
     return render(request, "Item/index.html", context)

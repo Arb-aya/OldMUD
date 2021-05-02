@@ -54,11 +54,25 @@
 
     <div class="card-footer">
         {% if user.is_authenticated %}
-        <form method="POST" action="{%url 'buy_item'%}">
-        {% csrf_token %}
-        <input type="hidden" name="item_name" value="{{item.name}}">
-        <button id="{{item.name}}" class="btn" type="submit">Buy</button>
-        </form>
+            <form method="POST" action="{%url 'buy_item'%}">
+            {% csrf_token %}
+            <input type="hidden" name="item_name" value="{{item.name}}">
+            <button class="btn" type="submit">Buy</button>
+            </form>
+
+            {% if item.name in character_items %}
+            <form method="POST" action="{%url 'sell_item'%}">
+            {% csrf_token %}
+            <input type="hidden" name="item_name" value="{{item.name}}">
+            <button class="btn" type="submit">Sell for
+                {% if item.cost|intdiv:2 == 0 %}
+                1
+                {% else %}
+                {{ item.cost|intdiv:2}}
+                {% endif %}
+            </button>
+            </form>
+            {% endif %}
         {% endif %}
     </div>
   </div>
