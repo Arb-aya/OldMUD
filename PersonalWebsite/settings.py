@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.twitch",
 
     "crispy_forms",
+    "mathfilters",
     "storages",
 
     "home",
