@@ -1,19 +1,20 @@
 {% extends 'base.html'%} {% load static %} {% block content%}
 {% block extra_css %}
+{% load mathfilters %}
 {{ block.super }}
 <link rel="stylesheet" href="{% static 'css/home.css' %}" type="text/css" media="all">
 {% endblock %}
 <section class="row">
   <div class="col-12 section-wrapper bg-black">
     <div class="section-slope-right bg-orange">
-      <div class="section-content animate__animated" id="s1">
-        <h2>Section 1</h2>
+      <div class="section-content animate__animated align-self-end" id="s1">
+        <h2 class="text-center">Welcome</h2>
         <p>
-          Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
-          nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
-          sed diam voluptua. At vero eos et accusam et justo duo dolores et ea
-          rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem
-          ipsum dolor sit amet.
+        Welcome to my site. This will act as a collection of my projects (see the github repositories section below), a place
+        for me to share articles written on things I've been studying and a portal to manage my twitch chat game.
+
+        Users in my twitch chat will gain points and gold by spending time in chat. They can then spend these on this site to upgrade their character
+        and buy new items, respectively. You'll have to login with your twitch account to get started!
         </p>
       </div>
     </div>
@@ -22,20 +23,47 @@
   <div class="col-12 section-wrapper bg-orange">
     <div class="section-slope-left bg-black">
       <div class="section-content animate__animated" id="s2">
-        <h2>Section 2</h2>
-        <p>
-          Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam
-          nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
-          sed diam voluptua. At vero eos et accusam et justo duo dolores et ea
-          rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem
-          ipsum dolor sit amet.
-        </p>
+
+        <h2 class="text-center"> My Github Repositories </h2>
+
+        <div id="repoCarousel" class="carousel slide align-self-center" data-bs-ride="carousel" data-bs-interval="false">
+
+            <div class="carousel-inner">
+                {% for row in repos %}
+                    {% for repo in row %}
+                  <div class="carousel-item">
+                    <div class="row">
+                            <div class="col-12 col-md-4 offset-md-4">
+                                {% include 'includes/repocard.html' %}
+                            </div>
+                    </div>
+                   </div>
+                {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+
+      <button class="carousel-control-prev" type="button" data-bs-target="#repoCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+      </button>
+
+      <button class="carousel-control-next" type="button" data-bs-target="#repoCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+      </button>
+
       </div>
     </div>
   </div>
 </section>
+
 {% endblock %}
+
 {% block post_load_js %}
 {{ block.super }}
 <script src="{% static 'js/scrolling.js' %}" charset="utf-8"></script>
+    <script>
+        document.querySelector('.carousel-item:first-of-type').classList.add('active');
+    </script>
 {% endblock %}

@@ -101,16 +101,15 @@ body {
   height: 100%;
   padding-bottom: 1rem;
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  flex-direction: row;
 }
 
 .section-content {
   position: relative;
-  margin: 0 auto;
   padding: 20px;
+  padding-top: 0;
   height: 75%;
-  max-width: 75%;
+  width: 100%;
   opacity: 0;
   will-change: opacity;
 }
@@ -141,6 +140,11 @@ body {
 .bg-black {
   background-color: #000000;
   color: #d55e00;
+}
+
+#repoCarousel {
+  height: 100%;
+  margin-top: 6rem;
 }
 
 /*# sourceMappingURL=home.css.map */
