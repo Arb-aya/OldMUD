@@ -20,16 +20,50 @@
 
   <div class="row mt-2">
     <div class="col-12 col-md-4 offset-md-4">
-        <form class="form" method="GET" action="">
+        <form class="form">
             {% csrf_token %}
             <div class="search-group input-group w-100">
-                <input class="form-control search-box" type="text" name="q" placeholder="Search for an item...">
+                <input id="search" class="form-control search-box" type="text" name="q" placeholder="Search for an item...">
                 <div class="input-group-append">
-                    <button class="form-control btn search-btn" type="submut">
+                    <button id="search-btn" class="form-control btn search-btn">
                     <span class="icon icon-blue">
                         <i class="fas fa-search"></i>
                     </span>
                 </div>
+            </div>
+
+            <a id="extraFiltersToggle" data-bs-toggle="collapse" href="#extraFilters" role="button" aria-expanded="false" aria-controls="extraFilters"> Advanced Search Options
+                <i class="fas fa-caret-down"></i></a>
+            <div class="collapse" id="extraFilters">
+                <fieldset class="border-top py-4">
+                <legend class="fs-5 fw-bold"> Item Rarity: </legend>
+                {% for rarity in item_rarities%}
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input item_rarity" type="checkbox" id="{{rarity}}" value="{{rarity}}">
+                        <label for="{{rarity}}">{{rarity}}</label>
+                    </div>
+                {% endfor %}
+                </fieldset>
+
+                <fieldset class="border-top py-4">
+                <legend class="fs-5 fw-bold"> Item Type: </legend>
+                {% for item_type in item_types%}
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input item_type" type="checkbox" id="{{item_type}}" value="{{item_type}}">
+                        <label for="{{item_type}}">{{item_type}}</label>
+                    </div>
+                {% endfor %}
+                </fieldset>
+
+                <fieldset class="border-top border-bottom py-4">
+                <legend class="fs-5 fw-bold"> Equipment slot: </legend>
+                {% for item_slot in item_slots%}
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input item_slot" type="checkbox" id="{{item_slot}}" value="{{item_slot}}">
+                        <label for="{{item_slot}}">{{item_slot}}</label>
+                    </div>
+                {% endfor %}
+                </fieldset>
             </div>
         </form>
     </div>
@@ -41,4 +75,64 @@
     {% for item in items %} {% include 'includes/itemCard.html' %} {% endfor %}
   </div>
 </div>
+{% endblock %}
+
+
+{% block post_load_js %}
+{{super}}
+
+<script>
+
+/**
+ * Generates the query to use when filtering items. Takes the textbox value, and any values of
+ * checked checkboxes
+ */
+function generate_query(){
+    let query = "";
+    const csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const q = document.getElementById('search').value;
+    query += `?q=${q}`;
+
+    const rarities = document.querySelectorAll('.item_rarity');
+    const rarities_array = [];
+
+    rarities.forEach((rarity)=>{
+        if(rarity.checked)
+            rarities_array.push(rarity.value);
+    });
+
+    if(rarities_array.length){
+        query +=`&rarity=${rarities_array.join()}`
+    }
+
+    const item_types = document.querySelectorAll('.item_type');
+    const types_array = [];
+    item_types.forEach((item_type)=>{
+        if(item_type.checked)
+            types_array.push(item_type.value);
+    });
+
+    if(types_array.length){
+        query +=`&type=${types_array.join()}`
+    }
+
+    const item_slots = document.querySelectorAll('.item_slot');
+    const slots_array = [];
+    item_slots.forEach((item_slot)=>{
+        if(item_slot.checked)
+            slots_array.push(item_slot.value);
+    });
+
+    if(slots_array.length){
+        query +=`&slot=${slots_array.join()}`
+    }
+
+    window.location.href = `/MUD/view_items${encodeURI(query)}`;
+}
+
+document.getElementById('search-btn').addEventListener('click', (e)=>{
+        e.preventDefault();
+        generate_query();
+});
+</script>
 {% endblock %}

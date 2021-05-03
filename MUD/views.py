@@ -4,14 +4,20 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.serializers import serialize
 from django.shortcuts import HttpResponse, redirect, render, reverse, get_object_or_404
+from django.db.models import Q
 
 from .forms import DisplayCharacterForm, EditCharacterForm
 from .helpers import (get_character, get_items_to_display,
                       validate_character_form)
 from .models import Character, Item, ItemSettings
+from .utils import ItemRarity, ItemType, Slot
 
 
 def view_shop(request):
+    """
+    Display a view that allows the user to buy gold
+
+    """
     return render(request, "buygold.html")
 
 def view_items(request):
@@ -22,15 +28,43 @@ def view_items(request):
     """
     character = get_character(request.user.username)
     context = {}
-    items = None
+    items = Item.objects.all()
+
+    if request.GET:
+        if 'rarity' in request.GET:
+            rarities = request.GET['rarity']
+            if rarities:
+                rarities = [rarity.lower() for rarity in rarities.split(',')]
+                items = items.filter(rarity__in=rarities)
+
+        if 'type' in request.GET:
+            types = request.GET['type']
+            if types:
+                types = [types.lower() for type in types.split(',')]
+                items = items.filter(item_type__in=types)
+
+        if 'slot' in request.GET:
+            slots = request.GET['slots']
+            if slots:
+                slots = [slot.lower() for slots in slots.split(',')]
+                items = items.filter(slot__in=slots)
+
+        if 'q' in request.GET:
+            query = request.GET['q']
+            if  query:
+                queries = Q(name__icontains=query) | Q(description__icontains=query) | Q(rarity__icontains=query) | Q(item_type__icontains=query)
+                items  = items.filter(queries)
 
     if character:
         character_items = character.items.values_list("item__name",flat=True)
         context["character_items"] = character_items
         context["character_gold"] = character.gold
 
-    items = Item.objects.all()
     context["items"] = items
+
+    context["item_types"] = ItemType.labels
+    context["item_slots"] = Slot.labels
+    context["item_rarities"] = ItemRarity.labels
 
     return render(request, "Item/index.html", context)
 

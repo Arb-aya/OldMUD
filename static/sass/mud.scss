@@ -308,3 +308,12 @@ input[type="text"] {
 .search-box{
     border: 2px solid base.$yellow !important;
 }
+
+#extraFiltersToggle{
+    color: #FFFFFF;
+    display: block;
+    text-decoration: none;
+    width:100%;
+    text-align: center;
+    margin-top: 1rem;
+}
