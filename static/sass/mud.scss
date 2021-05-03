@@ -11,11 +11,22 @@ body {
   margin-left: 0.2rem;
 }
 
+.icon-blue{
+    color: base.$blue-bg;
+    background-color: base.$blue-font-pair;
+}
+
 #balance{
+    position: relative;
     border: 2px solid #E69F00;
     border-radius: 10px;
     background-color: rgba(0, 0, 0, 0.125);
     padding: 1rem;
+
+    a{
+        text-decoration: none;
+        color: inherit;
+    }
 }
 
 .page-title {
@@ -227,6 +238,12 @@ body {
       visibility: hidden;
     }
   }
+
+input[type="text"]:focus {
+    border: 2px solid base.$yellow;
+    background-color: base.$blue-bg;
+    color: base.$blue-font-pair;
+  }
 }
 
 .trait-title {
@@ -243,12 +260,6 @@ input[type="text"] {
   color: base.$blue-bg;
   font-weight: bold;
   transition: all 0.5s ease;
-
-  &:focus {
-    border: 2px solid base.$yellow;
-    background-color: base.$blue-bg;
-    color: base.$blue-font-pair;
-  }
 }
 
 #inventory {
@@ -284,4 +295,16 @@ input[type="text"] {
 .price{
     font-weight: bold;
     color: base.$yellow;
+}
+
+.search-btn{
+    border: 2px solid base.$yellow;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: none;
+    background-color: white;
+}
+
+.search-box{
+    border: 2px solid base.$yellow !important;
 }

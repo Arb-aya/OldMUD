@@ -1,27 +1,44 @@
 {% extends 'MUDBase.html' %} {% load static %} {% load socialaccount %}
 {% block content %}
-<div class="row">
-  <div class="col-12">
+<div class="row mt-3">
+  <div class="col-12 col-md-2 offset-md-5">
     <h1 class="text-uppercase text-center my-4">Item shop</h1>
   </div>
+  <div class="col-12 col-md-1 offset-md-3 mt-3">
+      {% if user.is_authenticated %}
+          <h2 id="balance" class="text-center">
+            <i class="fas fa-coins icon me-3 mb-2">
+              <p class="visually-hidden">Gold coins</p>
+            </i>
+            <a href="{% url 'view_shop'%}" class="stretched-link">
+            {{ character_gold }}
+            </a>
+          </h2>
+      {% endif %}
+  </div>
+</div>
 
-  {% if user.is_authenticated %}
-  <div class="row">
-    <div class="col-12">
-      <h2 id="balance" class="text-center">
-        <i class="fas fa-coins icon me-3 mb-2">
-          <p class="visually-hidden">Gold coins</p>
-        </i>
-        {{ character_gold }}
-      </h2>
+  <div class="row mt-2">
+    <div class="col-12 col-md-4 offset-md-4">
+        <form class="form" method="GET" action="">
+            {% csrf_token %}
+            <div class="search-group input-group w-100">
+                <input class="form-control search-box" type="text" name="q" placeholder="Search for an item...">
+                <div class="input-group-append">
+                    <button class="form-control btn search-btn" type="submut">
+                    <span class="icon icon-blue">
+                        <i class="fas fa-search"></i>
+                    </span>
+                </div>
+            </div>
+        </form>
     </div>
   </div>
-  {% endif %}
 
   <div
-    class="row rows-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 g-lg-3 justify-content-center"
+    class="row mt-5 rows-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 g-lg-3 justify-content-center"
   >
     {% for item in items %} {% include 'includes/itemCard.html' %} {% endfor %}
   </div>
 </div>
-{% csrf_token %} {% endblock %}
+{% endblock %}
