@@ -1,9 +1,10 @@
-
 <nav class="navbar navbar-expand-md navbar-light bg-light">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#">
-      <img src="https://via.placeholder.com/75" alt="Site Logo" />
-    </a>
+    <h2 >
+        <a class="navbar-brand" href="{% url 'home_index' %}">
+          <img id="siteLogo" class="img" src="{{MEDIA_URL}}logo.png" alt="Site Logo" />
+        Arbaya</a>
+    </h2>
 
     <button
       class="navbar-toggler"
@@ -22,24 +23,31 @@
         class="navbar-nav mx-auto ml-md-auto align-content justify-content-end w-100 me-5"
       >
 	  <li clas="nav-item">
-		  <a class="nav-link" href="{% url 'product_index' %}">Products</a>
+		  <a class="nav-link" href="{% url 'view_items' %}">Item Shop</a>
 	  </li>
+
         {% if user.is_authenticated %}
-          <li clas="nav-item">
-		  <a class="nav-link" href="{% url 'account_email' %}">Change E-mail</a>
-	  </li>
-          <li clas="nav-item">
-		  <a class="nav-link" href="{% url 'account_logout' %}">Sign Out</a>
-	  </li>
+          <li class="nav-item btn-group">
+              <a id="navbarToggler" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> Character </a>
+              <ul class="dropdown-menu" aria-labelledby="navbarToggler">
+                  <li><a class="dropdown-item w-100 text-end" href="{% url 'view_character' %}"> Character Overview<i class="fas fa-user icon"></i></a></li>
+                  <li><a class="dropdown-item w-100 text-end" href="{% url 'manage_inventory'%}"> Manage Inventory <i class="fas fa-box-open icon"></i></a></li>
+                  <li><a class="dropdown-item w-100 text-end" href="{% url 'edit_character'%}"> Upgrade Character  <i class="fas fa-edit icon"></i> </a></li>
+              </ul>
+          </li>
+
+          <li class="nav-item">
+              <a class="nav-link" href="{% url 'view_shop' %}">Buy Gold</a>
+          </li>
+
+          <li class="nav-item">
+              <a class="nav-link" href="{% url 'account_logout' %}">Sign Out</a>
+          </li>
 	{% else %}
         <li class="nav-item" id="loginLink">
-          <a class="nav-link text-muted" href="{% url 'account_login' %}">Login</a>
-        </li>
-
-        <li class="nav-item" id="registerLink">
-          <strong>
-		  <a class="nav-link" href="{{ signup_url }}">Register</a>
-	  </strong>
+            <strong>
+          <a class="nav-link" href="{% url 'account_login' %}">Login</a>
+            </strong>
         </li>
         {% endif %}
       </ul>
