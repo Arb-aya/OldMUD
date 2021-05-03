@@ -18,6 +18,12 @@ def view_shop(request):
     Display a view that allows the user to buy gold
 
     """
+    if request.POST:
+        gold = request.POST['gold']
+        if gold:
+            request.session['gold_bundle'] = gold
+            return redirect(reverse('checkout'))
+
     return render(request, "buygold.html")
 
 def view_items(request):
