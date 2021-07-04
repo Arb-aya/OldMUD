@@ -1,6 +1,65 @@
 {% extends 'MUDBase.html' %}
+{% load static %}
+
 
 {% block content%}
 <div class="row">
+    <div class="col-12 text-center pt-5">
+        <h2> Buy {{bundle_name}} gold</h2>
+    </div>
+    <div class="col-12 col-md-8 offset-md-2">
+        <p class="text-center text-white">Please fill out the form below to complete your order</p>
+        <form action="{% url 'checkout' %}" method="POST" id="payment_form">
+            {% csrf_token %}
+            <fieldset class="rounded px-3 mb-5">
+                <legend class="fieldset-label small text-white px-2 w-auto">Contact Details</legend>
+                {{ order_form.full_name | as_crispy_field }}
+                {{ order_form.email | as_crispy_field }}
+                {{ order_form.phone_number | as_crispy_field }}
+            </fieldset>
+
+            <fieldset class="rounded px-3 mb-5">
+                <legend class="fieldset-label small text-white px-2 w-auto">Address</legend>
+                {{ order_form.country | as_crispy_field }}
+                {{ order_form.postcode | as_crispy_field }}
+                {{ order_form.town_or_city | as_crispy_field }}
+                {{ order_form.street_address1 | as_crispy_field }}
+                {{ order_form.street_address2 | as_crispy_field }}
+                {{ order_form.county | as_crispy_field }}
+            </fieldset>
+
+            <fieldset class="rounded px-3 mb-5">
+                <legend class="fieldset-label small text-white px-2 w-auto">Payment Information</legend>
+                <div class="mb-3" id="card-element">
+                </div>
+
+                <div class="mb-3 text-danger" id="card-errors" role="alert">
+                </div>
+            </fieldset>
+
+            <button class="btn buy-btn" id="submit-button">
+                <span class="font-bold text-white">Complete Order</span>
+                <span class="icon"><i class="fas fa-lock"></i></span>
+            </button>
+
+            <p class="small text-danger my-0">
+                <span class="icon">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>
+                    Your card will be charged <strong> £{{bundle_price}}</strong>
+                </span>
+                </span>
+            </p>
+
+        </form>
+    </div>
 </div>
 {% endblock %}
+
+{% block post_load_js %}
+    {{block.super}}
+    {{ stripe_public_key|json_script:"id_stripe_public_key" }}
+    {{ client_secret|json_script:"id_client_secret" }}
+    <script src="{% static '/js/stripe_elements.js' %} "></script>
+{% endblock %}
+

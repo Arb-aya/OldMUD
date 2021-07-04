@@ -8,7 +8,7 @@
         <p> Pay <span class="price">£2.99</span> for <span class="price">10</span> gold coins </p>
         <form method="POST">
         {% csrf_token %}
-        <input type="hidden" name="gold" value="small">
+        <input type="hidden" name="bundle_name" value="small">
         <button class="btn" type="submit"> Buy </button>
         </form>
     </div>
@@ -19,7 +19,7 @@
         <p> Pay <span class="price">£5.99</span> for <span class="price">30</span> gold coins </p>
         <form method="POST">
         {% csrf_token %}
-        <input type="hidden" name="gold" value="medium">
+        <input type="hidden" name="bundle_name" value="medium">
         <button class="btn" type="submit"> Buy </button>
         </form>
     </div>
@@ -30,7 +30,7 @@
         <p> Pay <span class="price">£9.99</span> for <span class="price">100</span> gold coins </p>
         <form method="POST">
         {% csrf_token %}
-        <input type="hidden" name="gold" value="large">
+        <input type="hidden" name="bundle_name" value="large">
         <button class="btn" type="submit"> Buy </button>
         </form>
     </div>

@@ -19,9 +19,18 @@ def view_shop(request):
 
     """
     if request.POST:
-        gold = request.POST['gold']
-        if gold:
-            request.session['gold_bundle'] = gold
+        name = request.POST['bundle_name']
+        if name:
+            if name == "small":
+                price = 2.99
+            elif name == "medium":
+                price = 5.99
+            else:
+                price = 9.99
+
+            request.session['bundle_name'] = name
+            request.session['bundle_price'] = price
+
             return redirect(reverse('checkout'))
 
     return render(request, "buygold.html")
