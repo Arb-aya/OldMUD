@@ -168,6 +168,12 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
+STATIC_URL = "/static/"
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
 if 'USE_AWS' in os.environ:
     AWS_S3_OBJECT_PARAMETERS = {
             'Expires': 'Thu, 31 Dec 2099 20:00:00 GMT',
@@ -199,11 +205,6 @@ STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY','')
 
 
 
-STATIC_URL = "/static/"
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 FILE_UPLOAD_PERMISSIONS = 0o644
 
